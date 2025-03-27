@@ -1,9 +1,10 @@
 import {
-  users, games, teams, teamMembers, tournaments, tournamentRegistrations, matches, leaderboard, walletTransactions,
+  users, games, teams, teamMembers, tournaments, tournamentRegistrations, matches, leaderboard, walletTransactions, adminAuditLogs,
   type User, type InsertUser, type Game, type InsertGame, type Team, type InsertTeam, 
   type TeamMember, type InsertTeamMember, type Tournament, type InsertTournament,
   type TournamentRegistration, type InsertTournamentRegistration, type Match, type InsertMatch,
-  type LeaderboardEntry, type InsertLeaderboardEntry, type WalletTransaction, type InsertWalletTransaction
+  type LeaderboardEntry, type InsertLeaderboardEntry, type WalletTransaction, type InsertWalletTransaction,
+  type AdminAuditLog, type InsertAdminAuditLog
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, asc, sql, like, isNull, or } from "drizzle-orm";
@@ -13,13 +14,18 @@ export interface IStorage {
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
+  updateUser(userId: number, userData: Partial<InsertUser>): Promise<User>;
   updateUserWallet(userId: number, amount: number): Promise<User>;
+  getUsers(limit?: number, offset?: number): Promise<User[]>;
+  getUsersCount(): Promise<number>;
   
   // Game operations
   getGames(): Promise<Game[]>;
   getGame(id: number): Promise<Game | undefined>;
   getFeaturedGames(): Promise<Game[]>;
   createGame(game: InsertGame): Promise<Game>;
+  updateGame(gameId: number, gameData: Partial<InsertGame>): Promise<Game>;
+  deleteGame(gameId: number): Promise<boolean>;
   
   // Team operations
   getTeams(): Promise<Team[]>;
@@ -27,10 +33,13 @@ export interface IStorage {
   getTopTeams(limit: number): Promise<Team[]>;
   getTeamsByUserId(userId: number): Promise<Team[]>;
   createTeam(team: InsertTeam): Promise<Team>;
+  updateTeam(teamId: number, teamData: Partial<InsertTeam>): Promise<Team>;
+  deleteTeam(teamId: number): Promise<boolean>;
   
   // Team member operations
   getTeamMembers(teamId: number): Promise<TeamMember[]>;
   addTeamMember(teamMember: InsertTeamMember): Promise<TeamMember>;
+  removeTeamMember(teamId: number, userId: number): Promise<boolean>;
   
   // Tournament operations
   getTournaments(): Promise<Tournament[]>;
@@ -39,10 +48,13 @@ export interface IStorage {
   getFeaturedTournament(): Promise<Tournament | undefined>;
   getTournamentsByGameId(gameId: number): Promise<Tournament[]>;
   createTournament(tournament: InsertTournament): Promise<Tournament>;
+  updateTournament(tournamentId: number, tournamentData: Partial<InsertTournament>): Promise<Tournament>;
+  deleteTournament(tournamentId: number): Promise<boolean>;
   
   // Tournament registration operations
   registerForTournament(registration: InsertTournamentRegistration): Promise<TournamentRegistration>;
   getTournamentRegistrations(tournamentId: number): Promise<TournamentRegistration[]>;
+  updateRegistrationStatus(registrationId: number, status: string): Promise<TournamentRegistration>;
   
   // Match operations
   getMatches(tournamentId: number): Promise<Match[]>;
@@ -57,6 +69,23 @@ export interface IStorage {
   // Wallet operations
   createWalletTransaction(transaction: InsertWalletTransaction): Promise<WalletTransaction>;
   getWalletTransactions(userId: number): Promise<WalletTransaction[]>;
+  getPendingWithdrawals(): Promise<WalletTransaction[]>;
+  approveWithdrawal(transactionId: number): Promise<WalletTransaction>;
+  rejectWithdrawal(transactionId: number, reason: string): Promise<WalletTransaction>;
+  
+  // Admin audit logs
+  createAuditLog(log: InsertAdminAuditLog): Promise<AdminAuditLog>;
+  getAuditLogs(adminId?: number, limit?: number, offset?: number): Promise<AdminAuditLog[]>;
+  
+  // Dashboard statistics
+  getDashboardStats(): Promise<{
+    totalUsers: number;
+    activeUsers: number;
+    totalRevenue: number;
+    pendingWithdrawals: number;
+    ongoingTournaments: number;
+    totalTransactions: number;
+  }>;
 }
 
 export class MemStorage implements IStorage {
@@ -793,6 +822,15 @@ export class DatabaseStorage implements IStorage {
     return user;
   }
 
+  async updateUser(userId: number, userData: Partial<InsertUser>): Promise<User> {
+    const [user] = await db
+      .update(users)
+      .set(userData)
+      .where(eq(users.id, userId))
+      .returning();
+    return user;
+  }
+
   async updateUserWallet(userId: number, amount: number): Promise<User> {
     const [user] = await db
       .update(users)
@@ -800,6 +838,27 @@ export class DatabaseStorage implements IStorage {
       .where(eq(users.id, userId))
       .returning();
     return user;
+  }
+
+  async getUsers(limit?: number, offset?: number): Promise<User[]> {
+    let usersList = await db.select().from(users).orderBy(asc(users.id));
+    
+    if (limit !== undefined) {
+      const start = offset !== undefined ? offset : 0;
+      const end = start + limit;
+      return usersList.slice(start, end);
+    }
+    
+    if (offset !== undefined) {
+      return usersList.slice(offset);
+    }
+    
+    return usersList;
+  }
+
+  async getUsersCount(): Promise<number> {
+    const [result] = await db.select({ count: sql<number>`count(*)` }).from(users);
+    return result.count;
   }
 
   async getGames(): Promise<Game[]> {
@@ -818,6 +877,20 @@ export class DatabaseStorage implements IStorage {
   async createGame(insertGame: InsertGame): Promise<Game> {
     const [game] = await db.insert(games).values(insertGame).returning();
     return game;
+  }
+  
+  async updateGame(gameId: number, gameData: Partial<InsertGame>): Promise<Game> {
+    const [game] = await db
+      .update(games)
+      .set(gameData)
+      .where(eq(games.id, gameId))
+      .returning();
+    return game;
+  }
+  
+  async deleteGame(gameId: number): Promise<boolean> {
+    await db.delete(games).where(eq(games.id, gameId));
+    return true;
   }
 
   async getTeams(): Promise<Team[]> {
@@ -854,6 +927,22 @@ export class DatabaseStorage implements IStorage {
     const [team] = await db.insert(teams).values(insertTeam).returning();
     return team;
   }
+  
+  async updateTeam(teamId: number, teamData: Partial<InsertTeam>): Promise<Team> {
+    const [team] = await db
+      .update(teams)
+      .set(teamData)
+      .where(eq(teams.id, teamId))
+      .returning();
+    return team;
+  }
+  
+  async deleteTeam(teamId: number): Promise<boolean> {
+    // Delete team members first due to foreign key constraint
+    await db.delete(teamMembers).where(eq(teamMembers.teamId, teamId));
+    await db.delete(teams).where(eq(teams.id, teamId));
+    return true;
+  }
 
   async getTeamMembers(teamId: number): Promise<TeamMember[]> {
     return db.select().from(teamMembers).where(eq(teamMembers.teamId, teamId));
@@ -870,6 +959,22 @@ export class DatabaseStorage implements IStorage {
     
     return member;
   }
+  
+  async removeTeamMember(teamId: number, userId: number): Promise<boolean> {
+    await db.delete(teamMembers)
+      .where(and(
+        eq(teamMembers.teamId, teamId),
+        eq(teamMembers.userId, userId)
+      ));
+    
+    // Update team member count
+    await db
+      .update(teams)
+      .set({ memberCount: sql`${teams.memberCount} - 1` })
+      .where(eq(teams.id, teamId));
+    
+    return true;
+  }
 
   async getTournaments(): Promise<Tournament[]> {
     return db.select().from(tournaments);
@@ -881,17 +986,17 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getUpcomingTournaments(limit?: number): Promise<Tournament[]> {
-    const query = db
+    const upcomingTournaments = await db
       .select()
       .from(tournaments)
       .where(eq(tournaments.status, "upcoming"))
       .orderBy(asc(tournaments.startDate));
     
-    if (limit) {
-      query.limit(limit);
+    if (limit !== undefined) {
+      return upcomingTournaments.slice(0, limit);
     }
     
-    return query;
+    return upcomingTournaments;
   }
 
   async getFeaturedTournament(): Promise<Tournament | undefined> {
@@ -922,6 +1027,37 @@ export class DatabaseStorage implements IStorage {
     
     return tournament;
   }
+  
+  async updateTournament(tournamentId: number, tournamentData: Partial<InsertTournament>): Promise<Tournament> {
+    const [tournament] = await db
+      .update(tournaments)
+      .set(tournamentData)
+      .where(eq(tournaments.id, tournamentId))
+      .returning();
+    return tournament;
+  }
+  
+  async deleteTournament(tournamentId: number): Promise<boolean> {
+    // Delete related data first due to foreign key constraints
+    await db.delete(matches).where(eq(matches.tournamentId, tournamentId));
+    await db.delete(tournamentRegistrations).where(eq(tournamentRegistrations.tournamentId, tournamentId));
+    
+    const [tournament] = await db
+      .select({ gameId: tournaments.gameId })
+      .from(tournaments)
+      .where(eq(tournaments.id, tournamentId));
+    
+    if (tournament) {
+      // Decrement game tournament count
+      await db
+        .update(games)
+        .set({ tournamentCount: sql`${games.tournamentCount} - 1` })
+        .where(eq(games.id, tournament.gameId));
+    }
+    
+    await db.delete(tournaments).where(eq(tournaments.id, tournamentId));
+    return true;
+  }
 
   async registerForTournament(insertRegistration: InsertTournamentRegistration): Promise<TournamentRegistration> {
     const [registration] = await db
@@ -943,6 +1079,15 @@ export class DatabaseStorage implements IStorage {
       .select()
       .from(tournamentRegistrations)
       .where(eq(tournamentRegistrations.tournamentId, tournamentId));
+  }
+  
+  async updateRegistrationStatus(registrationId: number, status: string): Promise<TournamentRegistration> {
+    const [registration] = await db
+      .update(tournamentRegistrations)
+      .set({ status })
+      .where(eq(tournamentRegistrations.id, registrationId))
+      .returning();
+    return registration;
   }
 
   async getMatches(tournamentId: number): Promise<Match[]> {
@@ -983,21 +1128,25 @@ export class DatabaseStorage implements IStorage {
     period: string = "weekly",
     limit?: number
   ): Promise<LeaderboardEntry[]> {
-    let query = db
+    const conditions = [];
+    
+    conditions.push(eq(leaderboard.period, period));
+    
+    if (gameId !== undefined) {
+      conditions.push(eq(leaderboard.gameId!, gameId));
+    }
+    
+    let entries = await db
       .select()
       .from(leaderboard)
-      .where(eq(leaderboard.period, period))
+      .where(and(...conditions))
       .orderBy(desc(leaderboard.points));
     
-    if (gameId) {
-      query = query.where(eq(leaderboard.gameId, gameId));
+    if (limit !== undefined) {
+      return entries.slice(0, limit);
     }
     
-    if (limit) {
-      query = query.limit(limit);
-    }
-    
-    return query;
+    return entries;
   }
 
   async getLeaderboardEntry(
@@ -1106,6 +1255,145 @@ export class DatabaseStorage implements IStorage {
       .from(walletTransactions)
       .where(eq(walletTransactions.userId, userId))
       .orderBy(desc(walletTransactions.timestamp));
+  }
+  
+  async getPendingWithdrawals(): Promise<WalletTransaction[]> {
+    return db
+      .select()
+      .from(walletTransactions)
+      .where(and(
+        eq(walletTransactions.type, "withdrawal"),
+        eq(walletTransactions.status, "pending")
+      ))
+      .orderBy(asc(walletTransactions.timestamp));
+  }
+  
+  async approveWithdrawal(transactionId: number): Promise<WalletTransaction> {
+    const [transaction] = await db
+      .update(walletTransactions)
+      .set({ status: "completed" })
+      .where(eq(walletTransactions.id, transactionId))
+      .returning();
+    return transaction;
+  }
+  
+  async rejectWithdrawal(transactionId: number, reason: string): Promise<WalletTransaction> {
+    // Get the transaction first to get the amount and user ID
+    const [transaction] = await db
+      .select()
+      .from(walletTransactions)
+      .where(eq(walletTransactions.id, transactionId));
+    
+    if (!transaction) {
+      throw new Error("Transaction not found");
+    }
+    
+    // Refund the user
+    await this.updateUserWallet(transaction.userId, Math.abs(transaction.amount));
+    
+    // Update the transaction status
+    const [updatedTransaction] = await db
+      .update(walletTransactions)
+      .set({ 
+        status: "rejected",
+        description: `${transaction.description} - Rejected: ${reason}`
+      })
+      .where(eq(walletTransactions.id, transactionId))
+      .returning();
+    
+    return updatedTransaction;
+  }
+  
+  async createAuditLog(log: InsertAdminAuditLog): Promise<AdminAuditLog> {
+    const [auditLog] = await db.insert(adminAuditLogs).values(log).returning();
+    return auditLog;
+  }
+  
+  async getAuditLogs(adminId?: number, limit?: number, offset?: number): Promise<AdminAuditLog[]> {
+    let conditions = [];
+    
+    if (adminId !== undefined) {
+      conditions.push(eq(adminAuditLogs.adminId, adminId));
+    }
+    
+    let query;
+    if (conditions.length > 0) {
+      query = db.select()
+        .from(adminAuditLogs)
+        .where(and(...conditions))
+        .orderBy(desc(adminAuditLogs.timestamp));
+    } else {
+      query = db.select()
+        .from(adminAuditLogs)
+        .orderBy(desc(adminAuditLogs.timestamp));
+    }
+    
+    const logs = await query;
+    
+    if (offset !== undefined || limit !== undefined) {
+      const startIndex = offset !== undefined ? offset : 0;
+      const endIndex = limit !== undefined ? startIndex + limit : undefined;
+      return logs.slice(startIndex, endIndex);
+    }
+    
+    return logs;
+  }
+  
+  async getDashboardStats(): Promise<{
+    totalUsers: number;
+    activeUsers: number;
+    totalRevenue: number;
+    pendingWithdrawals: number;
+    ongoingTournaments: number;
+    totalTransactions: number;
+  }> {
+    // Get total users
+    const [userCount] = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(users);
+    
+    // Get active users (users who logged in the last 30 days)
+    const [activeUserCount] = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(users)
+      .where(sql`${users.lastLogin} > NOW() - INTERVAL '30 days'`);
+    
+    // Get total revenue (entry fees)
+    const [revenueResult] = await db
+      .select({ 
+        total: sql<number>`COALESCE(SUM(amount), 0)` 
+      })
+      .from(walletTransactions)
+      .where(eq(walletTransactions.type, "entry_fee"));
+    
+    // Get pending withdrawals count
+    const [pendingWithdrawalsCount] = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(walletTransactions)
+      .where(and(
+        eq(walletTransactions.type, "withdrawal"),
+        eq(walletTransactions.status, "pending")
+      ));
+    
+    // Get ongoing tournaments count
+    const [ongoingTournamentsCount] = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(tournaments)
+      .where(eq(tournaments.status, "ongoing"));
+    
+    // Get total transactions count
+    const [transactionsCount] = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(walletTransactions);
+    
+    return {
+      totalUsers: userCount.count,
+      activeUsers: activeUserCount.count,
+      totalRevenue: revenueResult.total,
+      pendingWithdrawals: pendingWithdrawalsCount.count,
+      ongoingTournaments: ongoingTournamentsCount.count,
+      totalTransactions: transactionsCount.count
+    };
   }
 }
 

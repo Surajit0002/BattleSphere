@@ -1,0 +1,218 @@
+🏢 Admin Panel for BattleSphere
+The Admin Panel will have a single Super Admin role with full access to all platform functionalities. The Super Admin will have the authority to create, manage, and control all aspects of the platform, including tournaments, user management, payments, and system settings.
+
+👑 Super Admin Role
+✅ Permissions:
+✔️ Full control over all system functions.
+✔️ Create, modify, and delete tournaments.
+✔️ Approve or reject withdrawals and prize distribution.
+✔️ Manage user accounts (ban/unban, verification).
+✔️ Monitor live matches and tournament status.
+✔️ Access financial reports and performance analytics.
+✔️ Manage platform content (announcements, rules).
+✔️ Set prize pool distribution and fees.
+✔️ Adjust commission rates and payment policies.
+✔️ Monitor and act on anti-cheat reports.
+
+🖥️ Super Admin Dashboard Features
+📊 1. Overview Dashboard
+🔥 Total Active Users
+
+🔥 Total Revenue & Profit
+
+🔥 Pending & Completed Withdrawals
+
+🔥 Total Ongoing Tournaments
+
+🔥 Active Matches (Live status and scores)
+
+🔥 New User Registrations
+
+🔥 Most Played Games
+
+🏆 2. Tournament Management
+✅ Create New Tournament:
+
+Game Type (Free Fire, PUBG, BGMI, COD, etc.)
+
+Tournament Mode (Solo, Duo, Squad)
+
+Entry Type (Free, Paid)
+
+Prize Pool (Dynamic or Fixed)
+
+Match Format (Knockout, League)
+
+Registration Deadline
+
+Max Participants
+
+✅ Edit/Delete Tournaments
+
+Modify tournament details.
+
+Cancel tournaments.
+
+Adjust participant slots.
+
+✅ Manage Ongoing Tournaments:
+
+View live match stats.
+
+Pause or restart matches.
+
+Disqualify players for violations.
+
+Update scores manually (if needed).
+
+👥 3. User Management
+✅ View User List:
+
+User ID, Name, Email, KYC Status
+
+Total Matches Played & Wins
+
+Total Earnings & Withdrawals
+
+Referral Code & Bonus Status
+
+✅ Ban/Unban Users:
+
+Ban for cheating or misconduct.
+
+Issue warnings.
+
+✅ KYC Verification:
+
+Approve/Reject ID (PAN, Aadhaar).
+
+✅ Set User Privileges:
+
+Enable/Disable access to tournaments.
+
+Adjust withdrawal limits (if needed).
+
+💸 4. Payment & Withdrawal Management
+✅ Payment History:
+
+Total Deposits
+
+Total Withdrawals
+
+Pending Payments
+
+Transaction Fees Collected
+
+✅ Approve/Reject Withdrawals:
+
+User details (KYC status).
+
+Withdrawal request amount.
+
+Auto-detect suspicious patterns.
+
+✅ Set Payment Policies:
+
+Minimum Deposit Amount
+
+Maximum Withdrawal Limit (₹5000/day)
+
+Transaction Fee (10% on withdrawals)
+
+🔒 5. Security & Anti-Cheat
+✅ Monitor Suspicious Activity:
+
+Unusual win rates
+
+High-frequency withdrawals
+
+Multi-accounting
+
+✅ Ban Cheaters:
+
+Direct banning from live matches.
+
+Permanent or temporary bans.
+
+✅ Anti-Cheat Reports:
+
+Review player reports and complaints.
+
+Monitor in-game behavior and anomalies.
+
+📝 6. Content & Notification Management
+✅ Create Announcements:
+
+Tournament Reminders
+
+Platform Updates
+
+Promotional Offers
+
+✅ Push Notifications:
+
+Tournament Start/End
+
+Prize Distribution
+
+Maintenance Alerts
+
+✅ Custom Rules:
+
+Set custom tournament rules.
+
+Update platform terms & conditions.
+
+📈 7. Analytics & Reports
+✅ Financial Reports:
+
+Monthly Revenue
+
+Total Prizes Distributed
+
+Transaction Fees Collected
+
+✅ Performance Reports:
+
+Active vs Inactive Users
+
+Most Played Tournaments
+
+Player Retention Rates
+
+✅ Game Stats:
+
+Total Wins/Kills by Game
+
+Popular Tournament Formats
+
+Match Durations
+
+⚙️ 8. Settings & Platform Configuration
+✅ Platform Settings:
+
+Enable/Disable specific games.
+
+Adjust tournament fee rates.
+
+Change minimum withdrawal limits.
+
+✅ Commission Settings:
+
+Adjust platform commission (Default: 10%).
+
+Set discount or referral bonuses.
+
+✅ Leaderboard Settings:
+
+Set point calculation rules.
+
+Reset or archive leaderboards.
+
+🚀 Super Admin Access:
+➡️ Secure Admin Login with 2FA (Two-Factor Authentication)
+➡️ Role-Based Access with IP Whitelisting
+➡️ Logging and Audit Trail for admin activity
+
+✅ Full Control, Secure, and Scalable
+The Super Admin panel will provide complete control over the platform, allowing flexible tournament creation, secure payment handling, and real-time monitoring of user activity and match progress. 👑

@@ -7,6 +7,8 @@ export const gameModeEnum = pgEnum('game_mode', ['solo', 'duo', 'squad', 'custom
 export const tournamentTypeEnum = pgEnum('tournament_type', ['free', 'paid', 'sponsored', 'seasonal']);
 
 // Users table
+export const userRoleEnum = pgEnum('user_role', ['user', 'admin', 'superadmin']);
+
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   username: text("username").notNull().unique(),
@@ -15,6 +17,10 @@ export const users = pgTable("users", {
   email: text("email").notNull().unique(),
   walletBalance: integer("wallet_balance").default(0).notNull(),
   profileImage: text("profile_image"),
+  role: userRoleEnum("role").default("user").notNull(),
+  kycVerified: boolean("kyc_verified").default(false).notNull(),
+  isActive: boolean("is_active").default(true).notNull(),
+  lastLogin: timestamp("last_login"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -131,6 +137,18 @@ export const walletTransactions = pgTable("wallet_transactions", {
   timestamp: timestamp("timestamp").defaultNow().notNull(),
 });
 
+// Admin audit logs
+export const adminAuditLogs = pgTable("admin_audit_logs", {
+  id: serial("id").primaryKey(),
+  adminId: integer("admin_id").notNull().references(() => users.id),
+  action: text("action").notNull(),
+  entityType: text("entity_type").notNull(), // users, tournaments, payments, etc.
+  entityId: integer("entity_id"),
+  details: text("details"),
+  ipAddress: text("ip_address"),
+  timestamp: timestamp("timestamp").defaultNow().notNull(),
+});
+
 // Insert Schemas
 export const insertUserSchema = createInsertSchema(users).omit({ id: true, createdAt: true });
 export const insertGameSchema = createInsertSchema(games).omit({ id: true });
@@ -141,6 +159,7 @@ export const insertTournamentRegistrationSchema = createInsertSchema(tournamentR
 export const insertMatchSchema = createInsertSchema(matches).omit({ id: true });
 export const insertLeaderboardSchema = createInsertSchema(leaderboard).omit({ id: true, updatedAt: true });
 export const insertWalletTransactionSchema = createInsertSchema(walletTransactions).omit({ id: true, timestamp: true });
+export const insertAdminAuditLogSchema = createInsertSchema(adminAuditLogs).omit({ id: true, timestamp: true });
 
 // Types
 export type User = typeof users.$inferSelect;
@@ -169,3 +188,6 @@ export type InsertLeaderboardEntry = z.infer<typeof insertLeaderboardSchema>;
 
 export type WalletTransaction = typeof walletTransactions.$inferSelect;
 export type InsertWalletTransaction = z.infer<typeof insertWalletTransactionSchema>;
+
+export type AdminAuditLog = typeof adminAuditLogs.$inferSelect;
+export type InsertAdminAuditLog = z.infer<typeof insertAdminAuditLogSchema>;
