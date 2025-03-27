@@ -8,7 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Progress } from "@/components/ui/progress";
-import { BarChart, Calendar, GameController, Medal, MessageSquare, Timer, Trophy, UserPlus, Users } from "lucide-react";
+import { BarChart, Calendar, Gamepad2, Medal, MessageSquare, Timer, Trophy, UserPlus, Users } from "lucide-react";
 
 export default function UserDetails() {
   const [_, params] = useRoute("/user/:id");
@@ -402,7 +402,7 @@ export default function UserDetails() {
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center">
-                    <GameController className="h-5 w-5 mr-2" />
+                    <Gamepad2 className="h-5 w-5 mr-2" />
                     Teams
                   </CardTitle>
                 </CardHeader>
