@@ -1,0 +1,169 @@
+Project Name: BattleSphere
+🌟 Project Overview
+BattleSphere is a competitive multiplayer tournament platform where users can join and host tournaments for popular games like Free Fire, PUBG, and other battle royale or multiplayer games. The platform will allow players to compete solo, in duos, or in teams for real cash prizes. Users can join paid tournaments, track their rankings, and participate in various contests to win money and rewards. The project will feature a secure payment system, live game streaming, and a leaderboard-based reward structure.
+
+🎯 Core Features
+🔥 1. Tournament System
+✅ Multiple Game Support: Free Fire, PUBG, BGMI, COD Mobile, and more.
+
+✅ Game Modes: Solo, Duo, Squad (4-player), Custom Team.
+
+✅ Tournament Types:
+
+Free Entry Tournaments
+
+Paid Entry Tournaments (with cash prizes)
+
+Sponsored Tournaments (Brand-backed)
+
+Seasonal and Special Events
+
+✅ Knockout & League Style: Single-elimination, double-elimination, and point-based leagues.
+
+✅ Auto-Matchmaking: Based on player rank and skill level.
+
+✅ Live Brackets & Updates: Real-time bracket updates and standings.
+
+💰 2. Entry Fee & Prize Pool
+✅ Entry Fee: Paid tournaments with variable entry fees (₹10 - ₹500).
+
+✅ Dynamic Prize Pool: Prize amount increases based on the number of participants.
+
+✅ Instant Prize Distribution: Auto-credit to the winner's wallet after the match.
+
+✅ Top-Performer Rewards: Extra rewards for highest kills, MVP, and more.
+
+🎮 3. Competitive Modes
+✅ Solo Mode: 1v1 or battle royale format.
+
+✅ Duo Mode: Pair with a friend or auto-match with a teammate.
+
+✅ Team Mode: Create or join teams (up to 4 players).
+
+✅ Clans & Guilds: Create and manage teams/clans.
+
+🏆 4. Leaderboard & Stats
+✅ Global and Regional Leaderboards: Based on K/D ratio, wins, and performance.
+
+✅ Weekly/Monthly Ranking Rewards: Top players and clans get cash and bonuses.
+
+✅ Match History: View past matches and stats.
+
+✅ Detailed Player Profiles: Display rank, win rate, favorite weapons, etc.
+
+🌍 5. Live Streaming & Spectating
+✅ Integrated Live Stream: Stream matches directly on the app.
+
+✅ Spectator Mode: View live matches with commentary.
+
+✅ Highlight Reels: Auto-generated match highlights.
+
+✅ Chat & Reactions: Real-time reactions and chat during matches.
+
+💸 6. Payment & Wallet
+✅ Payment Gateway: Razorpay, UPI, Paytm, PhonePe, Google Pay.
+
+✅ In-Game Wallet:
+
+Deposit funds (Minimum ₹10).
+
+Withdraw funds (Minimum ₹50).
+
+Withdrawal fee: 10% of the amount.
+
+Daily Withdrawal Limit: ₹5000.
+
+✅ Auto-Debit for Entry Fees: Secure payment handling for tournament entry.
+
+✅ Referral Bonus: ₹50 for each successful referral (after the first match).
+
+🏅 7. Reward System
+✅ Instant Prizes: Cash prizes after winning matches.
+
+✅ Virtual Coins: Earn coins for participation, wins, and challenges.
+
+✅ In-App Marketplace:
+
+Redeem coins for gift cards, in-game skins, mobile recharges, etc.
+
+Exchange coins for cash at a rate of 1000 coins = ₹1.
+
+✅ Daily Login Bonus: Earn coins for daily app usage.
+
+✅ Spin the Wheel & Lucky Draw: Extra rewards through luck-based events.
+
+🏢 8. Admin Panel
+✅ Tournament Creation: Create, schedule, and manage tournaments.
+
+✅ Player Management: Ban/unban players, verify accounts.
+
+✅ Payment Control: Approve/deny withdrawals.
+
+✅ Game Management: Add/remove supported games.
+
+✅ Performance Dashboard: Insights into user engagement and revenue.
+
+🔒 9. Security & Fair Play
+✅ Anti-Cheat System: Real-time detection and banning of cheaters.
+
+✅ Player Verification: KYC verification (Aadhaar, PAN).
+
+✅ Fraud Prevention: Secure payment handling and fair play policies.
+
+📱 Tech Stack
+Frontend:
+✅ React Native (Expo) + NativeWind for UI
+✅ Redux for State Management
+
+Backend:
+✅ Appwrite for authentication and database
+✅ Node.js + Express for backend logic
+
+Payments:
+✅ Razorpay, UPI, Paytm, PhonePe, Google Pay
+
+Streaming:
+✅ Agora or Twitch SDK for live streaming
+
+Notifications:
+✅ Firebase Cloud Messaging (FCM) for match alerts and updates
+
+🚀 Business Model
+💼 Revenue Streams:
+Entry Fees: Commission on every paid tournament (10% per entry).
+
+In-App Purchases: Coin purchases, premium tournament passes.
+
+Ad Revenue: Sponsored ads and brand partnerships.
+
+Subscription Model: VIP Membership for exclusive tournaments and bonuses.
+
+Affiliate & Sponsorship: Partner with gaming brands and influencers.
+
+📈 Subscription Plans:
+Plan	Monthly Price	Benefits
+Free	₹0	Limited tournaments, basic rewards
+Pro	₹199	Access to all tournaments, increased coin rewards
+Elite	₹499	Access to exclusive tournaments, custom team badges, premium support
+🌍 Growth & Expansion
+✅ Beta Launch: Q3 2025 (India, Southeast Asia).
+✅ Expansion: Global rollout in Q4 2025.
+✅ Influencer & Esports Collaboration: Partner with gaming content creators and esports teams.
+✅ Twitch & YouTube Integration: Direct streaming and content sharing.
+
+🏁 Unique Selling Points (USPs):
+✔️ Real Cash Prizes with Instant Withdrawal
+✔️ Flexible Tournament Formats (Knockout, League)
+✔️ Anti-Cheat System for Fair Play
+✔️ Clan and Team-Based Competitions
+✔️ Marketplace for Rewards and Virtual Goods
+
+🔥 Launch Strategy:
+🎯 Social Media Blitz: Target gaming communities on Instagram, Twitter, and Discord.
+
+🎯 Esports Partnerships: Collaboration with gaming organizations and influencers.
+
+🎯 Referral Bonuses: Encourage user acquisition through referral programs.
+
+🎯 Early Bird Tournaments: High-stakes tournaments to attract top players.
+
