@@ -39,14 +39,29 @@ export default function Home() {
   const heroTournamentDate = new Date();
   heroTournamentDate.setDate(heroTournamentDate.getDate() + 7); // One week from now
   
+  // Featured tournament data for hero section
+  const featuredTournamentInfo = featuredTournamentData ? {
+    title: featuredTournamentData.name.split(' ')[0], // Just take the first word for stylistic purposes
+    description: `Compete in the ultimate ${featuredTournamentData.gameId === 1 ? 'battle royale' : 'esports'} championship with a prize pool of ₹${featuredTournamentData.prizePool?.toLocaleString() || '500,000'}`,
+    prizePool: featuredTournamentData.prizePool || 500000,
+    registeredPlayers: 1248 // Use a fixed number as registrationCount doesn't exist in the data model
+  } : {
+    title: "SEASON 3",
+    description: "Compete in the ultimate battle royale championship with a prize pool of ₹500,000",
+    prizePool: 500000,
+    registeredPlayers: 1248
+  };
+  
   return (
     <>
       {/* Hero Section */}
       <HeroSection 
-        title="SEASON 3 CHAMPIONSHIP"
-        description="Compete in the ultimate battle royale championship with a prize pool of ₹500,000"
+        title={featuredTournamentInfo.title}
+        description={featuredTournamentInfo.description}
         imageUrl="https://images.unsplash.com/photo-1542751371-adc38448a05e?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1170&q=80"
         startDate={heroTournamentDate}
+        prizePool={featuredTournamentInfo.prizePool}
+        registeredPlayers={featuredTournamentInfo.registeredPlayers}
       />
       
       {/* Featured Games */}

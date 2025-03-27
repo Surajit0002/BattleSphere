@@ -432,6 +432,293 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Admin dashboard routes
+  app.get(`${API_PREFIX}/admin/dashboard-stats`, async (req, res) => {
+    try {
+      const stats = await storage.getDashboardStats();
+      res.json(stats);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch dashboard statistics" });
+    }
+  });
+  
+  app.get(`${API_PREFIX}/admin/recent-transactions`, async (req, res) => {
+    try {
+      // Get all users to have user information available
+      const users = await Promise.all(
+        (await storage.getUsers(100)).map(async user => {
+          const { password, ...userWithoutPassword } = user;
+          return userWithoutPassword;
+        })
+      );
+      
+      // Get transactions from all users (limited to the most recent 20)
+      const transactions = [];
+      for (const user of users.slice(0, 10)) {
+        const userTransactions = await storage.getWalletTransactions(user.id);
+        transactions.push(...userTransactions.map(tx => ({
+          ...tx,
+          user: {
+            id: user.id,
+            username: user.username,
+            displayName: user.displayName
+          }
+        })));
+      }
+      
+      // Sort by timestamp descending and limit to 20
+      const sortedTransactions = transactions
+        .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+        .slice(0, 20);
+      
+      res.json(sortedTransactions);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch recent transactions" });
+    }
+  });
+  
+  app.get(`${API_PREFIX}/admin/pending-withdrawals`, async (req, res) => {
+    try {
+      const withdrawals = await storage.getPendingWithdrawals();
+      
+      // Get user details for each withdrawal
+      const withdrawalsWithUserData = await Promise.all(
+        withdrawals.map(async withdrawal => {
+          const user = await storage.getUser(withdrawal.userId);
+          return {
+            ...withdrawal,
+            user: user ? {
+              id: user.id,
+              username: user.username,
+              displayName: user.displayName,
+              profileImage: user.profileImage,
+              kycVerified: user.kycVerified
+            } : null
+          };
+        })
+      );
+      
+      res.json(withdrawalsWithUserData);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch pending withdrawals" });
+    }
+  });
+  
+  app.put(`${API_PREFIX}/admin/withdrawals/:id/approve`, async (req, res) => {
+    try {
+      const transactionId = parseInt(req.params.id);
+      const updatedTransaction = await storage.approveWithdrawal(transactionId);
+      
+      // Create audit log for this action
+      await storage.createAuditLog({
+        adminId: 1, // In a real app, this would come from the admin session
+        action: "approve_withdrawal",
+        entityType: "wallet_transaction",
+        entityId: transactionId,
+        details: `Approved withdrawal transaction #${transactionId} for ₹${updatedTransaction.amount}`
+      });
+      
+      res.json(updatedTransaction);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to approve withdrawal" });
+    }
+  });
+  
+  app.put(`${API_PREFIX}/admin/withdrawals/:id/reject`, async (req, res) => {
+    try {
+      const transactionId = parseInt(req.params.id);
+      const { reason } = req.body;
+      
+      if (!reason) {
+        return res.status(400).json({ message: "Rejection reason is required" });
+      }
+      
+      const updatedTransaction = await storage.rejectWithdrawal(transactionId, reason);
+      
+      // Create audit log for this action
+      await storage.createAuditLog({
+        adminId: 1, // In a real app, this would come from the admin session
+        action: "reject_withdrawal",
+        entityType: "wallet_transaction",
+        entityId: transactionId,
+        details: `Rejected withdrawal transaction #${transactionId} for ₹${updatedTransaction.amount} with reason: ${reason}`
+      });
+      
+      res.json(updatedTransaction);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to reject withdrawal" });
+    }
+  });
+  
+  app.get(`${API_PREFIX}/admin/active-tournaments`, async (req, res) => {
+    try {
+      const tournaments = await storage.getTournaments();
+      
+      // Filter for active/ongoing tournaments
+      const activeTournaments = tournaments.filter(tournament => 
+        tournament.status === 'ongoing' || 
+        (new Date(tournament.startDate) <= new Date() && 
+         (!tournament.endDate || new Date(tournament.endDate) >= new Date()))
+      );
+      
+      // For each tournament, get registration count
+      const tournamentsWithDetails = await Promise.all(
+        activeTournaments.slice(0, 10).map(async tournament => {
+          const registrations = await storage.getTournamentRegistrations(tournament.id);
+          const game = await storage.getGame(tournament.gameId);
+          
+          return {
+            ...tournament,
+            registrationsCount: registrations.length,
+            gameName: game?.name || 'Unknown Game'
+          };
+        })
+      );
+      
+      res.json(tournamentsWithDetails);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch active tournaments" });
+    }
+  });
+  
+  app.get(`${API_PREFIX}/admin/users`, async (req, res) => {
+    try {
+      const limit = req.query.limit ? parseInt(req.query.limit as string) : 10;
+      const offset = req.query.offset ? parseInt(req.query.offset as string) : 0;
+      
+      const users = await storage.getUsers(limit, offset);
+      const totalUsers = await storage.getUsersCount();
+      
+      // Remove password from user data
+      const usersWithoutPasswords = users.map(user => {
+        const { password, ...userWithoutPassword } = user;
+        return userWithoutPassword;
+      });
+      
+      res.json({
+        users: usersWithoutPasswords,
+        total: totalUsers,
+        limit,
+        offset
+      });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch users" });
+    }
+  });
+  
+  app.put(`${API_PREFIX}/admin/users/:id/ban`, async (req, res) => {
+    try {
+      const userId = parseInt(req.params.id);
+      const { reason } = req.body;
+      
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      const updatedUser = await storage.updateUser(userId, { isBanned: true });
+      
+      // Create audit log for this action
+      await storage.createAuditLog({
+        adminId: 1, // In a real app, this would come from the admin session
+        action: "ban_user",
+        details: `Banned user ${updatedUser.username} (ID: ${userId}) with reason: ${reason || "No reason provided"}`
+      });
+      
+      // Remove password from response
+      const { password, ...userWithoutPassword } = updatedUser;
+      res.json(userWithoutPassword);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to ban user" });
+    }
+  });
+  
+  app.put(`${API_PREFIX}/admin/users/:id/unban`, async (req, res) => {
+    try {
+      const userId = parseInt(req.params.id);
+      
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      const updatedUser = await storage.updateUser(userId, { isBanned: false });
+      
+      // Create audit log for this action
+      await storage.createAuditLog({
+        adminId: 1, // In a real app, this would come from the admin session
+        action: "unban_user",
+        details: `Unbanned user ${updatedUser.username} (ID: ${userId})`
+      });
+      
+      // Remove password from response
+      const { password, ...userWithoutPassword } = updatedUser;
+      res.json(userWithoutPassword);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to unban user" });
+    }
+  });
+  
+  app.put(`${API_PREFIX}/admin/users/:id/verify-kyc`, async (req, res) => {
+    try {
+      const userId = parseInt(req.params.id);
+      
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      const updatedUser = await storage.updateUser(userId, { kycVerified: true });
+      
+      // Create audit log for this action
+      await storage.createAuditLog({
+        adminId: 1, // In a real app, this would come from the admin session
+        action: "verify_kyc",
+        details: `Verified KYC for user ${updatedUser.username} (ID: ${userId})`
+      });
+      
+      // Remove password from response
+      const { password, ...userWithoutPassword } = updatedUser;
+      res.json(userWithoutPassword);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to verify KYC" });
+    }
+  });
+  
+  app.get(`${API_PREFIX}/admin/audit-logs`, async (req, res) => {
+    try {
+      const adminId = req.query.adminId ? parseInt(req.query.adminId as string) : undefined;
+      const limit = req.query.limit ? parseInt(req.query.limit as string) : 20;
+      const offset = req.query.offset ? parseInt(req.query.offset as string) : 0;
+      
+      const logs = await storage.getAuditLogs(adminId, limit, offset);
+      res.json(logs);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch audit logs" });
+    }
+  });
+  
+  // Create an audit log
+  app.post(`${API_PREFIX}/admin/audit-logs`, async (req, res) => {
+    try {
+      const { adminId, action, details } = req.body;
+      
+      if (!adminId || !action) {
+        return res.status(400).json({ message: "Admin ID and action are required" });
+      }
+      
+      const newLog = await storage.createAuditLog({
+        adminId,
+        action,
+        details: details || ""
+      });
+      
+      res.status(201).json(newLog);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to create audit log" });
+    }
+  });
+  
   const httpServer = createServer(app);
   
   return httpServer;

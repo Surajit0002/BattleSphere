@@ -20,6 +20,20 @@ import LiveStreams from "@/pages/live-streams";
 import StreamDetails from "@/pages/stream-details";
 import AdminDashboard from "@/pages/admin/dashboard";
 import AdminCreateTournament from "@/pages/admin/tournaments/create";
+import { lazy, Suspense } from "react";
+
+// Lazy load enhanced pages
+const EnhancedProfile = lazy(() => import("@/pages/enhanced-profile"));
+const LiveMatchesEnhanced = lazy(() => import("@/pages/live-matches-enhanced"));
+const TournamentDetailsEnhanced = lazy(() => import("@/pages/tournament-details-enhanced"));
+const CreateTournament = lazy(() => import("@/pages/admin/create-tournament"));
+
+// Loading component
+const PageLoader = () => (
+  <div className="flex items-center justify-center min-h-screen bg-black">
+    <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+  </div>
+);
 
 function Router() {
   return (
@@ -40,6 +54,37 @@ function Router() {
       <Route path="/stream/:id" component={StreamDetails}/>
       <Route path="/admin/dashboard" component={AdminDashboard}/>
       <Route path="/admin/tournaments/create" component={AdminCreateTournament}/>
+      
+      {/* Enhanced pages */}
+      <Route path="/profile/enhanced">
+        {() => (
+          <Suspense fallback={<PageLoader />}>
+            <EnhancedProfile />
+          </Suspense>
+        )}
+      </Route>
+      <Route path="/streams/enhanced">
+        {() => (
+          <Suspense fallback={<PageLoader />}>
+            <LiveMatchesEnhanced />
+          </Suspense>
+        )}
+      </Route>
+      <Route path="/tournaments/enhanced/:id">
+        {(params) => (
+          <Suspense fallback={<PageLoader />}>
+            <TournamentDetailsEnhanced />
+          </Suspense>
+        )}
+      </Route>
+      <Route path="/admin/create-tournament">
+        {() => (
+          <Suspense fallback={<PageLoader />}>
+            <CreateTournament />
+          </Suspense>
+        )}
+      </Route>
+      
       <Route component={NotFound} />
     </Switch>
   );

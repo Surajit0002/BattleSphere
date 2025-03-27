@@ -1,6 +1,19 @@
 import { Tournament, Game } from "@shared/schema";
 import { Link } from "wouter";
 import { formatDistanceToNow } from "date-fns";
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
+import { 
+  CalendarDays, 
+  Trophy, 
+  Users, 
+  Gamepad2, 
+  Flame, 
+  Timer, 
+  Coins, 
+  UserPlus, 
+  UsersRound 
+} from "lucide-react";
 
 interface TournamentCardProps {
   tournament: Tournament;
@@ -18,13 +31,23 @@ export default function TournamentCard({ tournament, game }: TournamentCardProps
     }
   };
   
+  const getGameModeIcon = (mode: string) => {
+    switch (mode) {
+      case 'solo': return <Gamepad2 className="h-3.5 w-3.5 mr-1" />;
+      case 'duo': return <UserPlus className="h-3.5 w-3.5 mr-1" />;
+      case 'squad': return <UsersRound className="h-3.5 w-3.5 mr-1" />;
+      case 'custom': return <Flame className="h-3.5 w-3.5 mr-1" />;
+      default: return <Gamepad2 className="h-3.5 w-3.5 mr-1" />;
+    }
+  };
+  
   const getGameModeClass = (mode: string) => {
     switch (mode) {
-      case 'solo': return 'bg-accent-pink/20 text-accent-pink';
-      case 'duo': return 'bg-accent-yellow/20 text-accent-yellow';
-      case 'squad': return 'bg-accent-green/20 text-accent-green';
-      case 'custom': return 'bg-accent-blue/20 text-accent-blue';
-      default: return 'bg-gray-700/20 text-gray-300';
+      case 'solo': return 'bg-destructive/20 text-destructive border-destructive/30';
+      case 'duo': return 'bg-accent-yellow/20 text-accent-yellow border-accent-yellow/30';
+      case 'squad': return 'bg-accent-green/20 text-accent-green border-accent-green/30';
+      case 'custom': return 'bg-primary/20 text-primary border-primary/30';
+      default: return 'bg-gray-700/20 text-gray-300 border-gray-500/30';
     }
   };
   
@@ -62,62 +85,150 @@ export default function TournamentCard({ tournament, game }: TournamentCardProps
   
   const getButtonIcon = (mode: string) => {
     switch (mode) {
-      case 'solo': return 'ri-trophy-line';
-      case 'duo': return 'ri-user-add-line';
-      case 'squad': return 'ri-team-line';
-      default: return 'ri-trophy-line';
+      case 'solo': return <Trophy className="h-4 w-4 mr-2" />;
+      case 'duo': return <UserPlus className="h-4 w-4 mr-2" />;
+      case 'squad': return <UsersRound className="h-4 w-4 mr-2" />;
+      default: return <Trophy className="h-4 w-4 mr-2" />;
     }
   };
-
+  
+  const getRegistrationFillPercentage = () => {
+    return (tournament.currentPlayers / tournament.maxPlayers) * 100;
+  };
+  
+  // Get color scheme based on tournament type
+  const getTournamentColors = (type: string) => {
+    switch (type) {
+      case 'sponsored':
+        return {
+          gradient: 'from-primary/10 to-primary/5',
+          border: 'border-primary/30',
+          shadow: 'shadow-primary/10',
+          hover: 'hover:shadow-primary/20',
+          badge: 'bg-primary/90'
+        };
+      case 'seasonal':
+        return {
+          gradient: 'from-destructive/10 to-destructive/5',
+          border: 'border-destructive/30',
+          shadow: 'shadow-destructive/10',
+          hover: 'hover:shadow-destructive/20',
+          badge: 'bg-destructive/90'
+        };
+      case 'paid':
+        return {
+          gradient: 'from-accent-yellow/10 to-accent-yellow/5',
+          border: 'border-accent-yellow/30',
+          shadow: 'shadow-accent-yellow/10',
+          hover: 'hover:shadow-accent-yellow/20',
+          badge: 'bg-accent-yellow/90'
+        };
+      default:
+        return {
+          gradient: 'from-accent-green/10 to-accent-green/5',
+          border: 'border-accent-green/30',
+          shadow: 'shadow-accent-green/10',
+          hover: 'hover:shadow-accent-green/20',
+          badge: 'bg-accent-green/90'
+        };
+    }
+  };
+  
+  // Use tournamentType instead of type property
+  const colors = getTournamentColors(tournament.tournamentType || 'free');
+  
   return (
-    <div className="bg-secondary-bg rounded-lg border border-gray-800 hover:border-accent-blue/50 transition-all overflow-hidden">
-      <div className="p-4 flex justify-between border-b border-gray-800">
-        <div className="flex items-center">
-          <img
-            src={game.imageUrl}
-            alt={game.name}
-            className="w-10 h-10 rounded object-cover mr-3"
-          />
-          <div>
-            <h3 className="font-rajdhani font-bold text-white">{tournament.name}</h3>
-            <span className="text-xs text-gray-400">
-              {game.name} - {tournament.maxPlayers} Players
-            </span>
+    <div className={`rounded-xl overflow-hidden border ${colors.border} bg-gradient-to-b ${colors.gradient} backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 ${colors.shadow} ${colors.hover} hover-scale`}>
+      {/* Header */}
+      <div className="relative">
+        <div className="absolute inset-0 bg-black/50 z-10"></div>
+        <img
+          src={game.imageUrl}
+          alt={game.name}
+          className="w-full h-32 object-cover z-0"
+        />
+        
+        <div className="absolute top-0 left-0 w-full p-4 z-20">
+          <div className="flex justify-between items-start">
+            <div>
+              <h3 className="font-rajdhani font-bold text-xl text-white tracking-wide mb-1">{tournament.name}</h3>
+              <div className="flex items-center">
+                <Badge className={`${colors.badge} mr-2`}>
+                  {tournament.entryFee > 0 ? "PAID" : "FREE"}
+                </Badge>
+                <Badge variant="outline" className={`${getGameModeClass(tournament.gameMode)} flex items-center`}>
+                  {getGameModeIcon(tournament.gameMode)}
+                  {getGameModeDisplay(tournament.gameMode)}
+                </Badge>
+              </div>
+            </div>
+            
+            <Badge variant="outline" className="bg-black/50 border-white/20 backdrop-blur-sm text-white">
+              <Timer className="h-3.5 w-3.5 mr-1.5" />
+              {getTimeDisplay(tournament.startDate)}
+            </Badge>
           </div>
-        </div>
-        <div className="flex flex-col items-end">
-          <span className={`text-xs ${getGameModeClass(tournament.gameMode)} rounded px-2 py-0.5 mb-1`}>
-            {getGameModeDisplay(tournament.gameMode)}
-          </span>
-          <div className="text-xs text-gray-400">{getTimeDisplay(tournament.startDate)}</div>
         </div>
       </div>
-      <div className="p-4">
-        <div className="grid grid-cols-3 gap-4 mb-4">
-          <div className="text-center">
-            <div className="text-xs text-gray-400">Entry Fee</div>
-            <div className="font-medium text-white">
-              {tournament.entryFee > 0 ? `₹${tournament.entryFee}` : "FREE"}
+      
+      {/* Details */}
+      <div className="p-5">
+        <div className="grid grid-cols-3 gap-6 mb-5">
+          <div className="flex flex-col items-center justify-center">
+            <div className="flex items-center mb-1 text-accent-yellow">
+              <Coins className="h-4 w-4 mr-1.5" />
+              <span className="font-medium text-lg">
+                {tournament.entryFee > 0 ? `₹${tournament.entryFee}` : "FREE"}
+              </span>
             </div>
+            <div className="text-xs text-gray-400">Entry Fee</div>
           </div>
-          <div className="text-center">
+          
+          <div className="flex flex-col items-center justify-center">
+            <div className="flex items-center mb-1 text-accent-green">
+              <Trophy className="h-4 w-4 mr-1.5" />
+              <span className="font-medium text-lg">₹{tournament.prizePool.toLocaleString()}</span>
+            </div>
             <div className="text-xs text-gray-400">Prize Pool</div>
-            <div className="font-medium text-accent-green">₹{tournament.prizePool.toLocaleString()}</div>
           </div>
-          <div className="text-center">
+          
+          <div className="flex flex-col items-center justify-center">
+            <div className="flex items-center mb-1 text-primary">
+              <Users className="h-4 w-4 mr-1.5" />
+              <span className="font-medium text-lg">
+                {tournament.currentPlayers}/{tournament.maxPlayers}
+              </span>
+            </div>
             <div className="text-xs text-gray-400">
               {tournament.gameMode === 'squad' || tournament.gameMode === 'duo' ? 'Teams' : 'Players'}
             </div>
-            <div className="font-medium text-white">
-              {tournament.currentPlayers}/{tournament.maxPlayers}
-            </div>
           </div>
         </div>
-        <Link href={`/tournaments/${tournament.id}`}>
-          <a className="w-full bg-accent-blue hover:bg-accent-blue/90 text-white py-2 rounded font-rajdhani font-medium flex items-center justify-center">
-            <i className={`${getButtonIcon(tournament.gameMode)} mr-2`}></i> {getButtonText(tournament.gameMode)}
-          </a>
-        </Link>
+        
+        {/* Registration progress */}
+        <div className="mb-4">
+          <div className="flex justify-between text-xs mb-1">
+            <span className="text-gray-400">Registration</span>
+            <span className="text-gray-400">{Math.round(getRegistrationFillPercentage())}% Full</span>
+          </div>
+          <Progress 
+            value={getRegistrationFillPercentage()} 
+            className="h-1.5"
+          />
+        </div>
+        
+        <div className="flex justify-between items-center">
+          <div className="flex items-center text-sm text-gray-400">
+            <CalendarDays className="h-4 w-4 mr-1.5" /> 
+            <span>{new Date(tournament.startDate).toLocaleDateString()}</span>
+          </div>
+          
+          <Link href={`/tournaments/${tournament.id}`}>
+            <a className="bg-primary text-white py-2 px-4 rounded-lg font-rajdhani font-medium flex items-center justify-center hover:bg-primary/90 transition-all shadow-lg shadow-primary/20">
+              {getButtonIcon(tournament.gameMode)} {getButtonText(tournament.gameMode)}
+            </a>
+          </Link>
+        </div>
       </div>
     </div>
   );
