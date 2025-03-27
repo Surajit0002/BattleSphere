@@ -9,6 +9,7 @@ import Tournaments from "@/pages/tournaments";
 import TournamentDetails from "@/pages/tournament-details";
 import Leaderboard from "@/pages/leaderboard";
 import Teams from "@/pages/teams";
+import TeamCreate from "@/pages/team-create";
 import Rewards from "@/pages/rewards";
 
 function Router() {
@@ -19,6 +20,7 @@ function Router() {
       <Route path="/tournaments/:id" component={TournamentDetails}/>
       <Route path="/leaderboard" component={Leaderboard}/>
       <Route path="/teams" component={Teams}/>
+      <Route path="/teams/create" component={TeamCreate}/>
       <Route path="/rewards" component={Rewards}/>
       <Route component={NotFound} />
     </Switch>
