@@ -237,6 +237,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(matches);
   });
   
+  // Get teams registered for a tournament
+  app.get(`${API_PREFIX}/tournaments/:id/teams`, async (req, res) => {
+    const tournamentId = parseInt(req.params.id);
+    const registrations = await storage.getTournamentRegistrations(tournamentId);
+    
+    // Get unique team IDs (filter out null teamIds)
+    const teamIds = registrations
+      .filter(reg => reg.teamId !== null)
+      .map(reg => reg.teamId as number);
+    
+    // For tournaments with team registrations, get team details
+    if (teamIds.length > 0) {
+      const teams = await Promise.all(
+        teamIds.map(teamId => storage.getTeam(teamId))
+      );
+      res.json(teams.filter(Boolean)); // Filter out any undefined teams
+    } else {
+      // For solo tournaments, get user details and map to a team-like structure
+      const userIds = registrations.map(reg => reg.userId);
+      const users = await Promise.all(
+        userIds.map(userId => storage.getUser(userId))
+      );
+      
+      // Map users to team-like structure
+      const soloTeams = users
+        .filter(Boolean)
+        .map(user => ({
+          id: user!.id,
+          name: user!.displayName,
+          logoUrl: user!.profileImage,
+          description: null,
+          captainId: user!.id,
+          memberCount: 1,
+          wins: 0,
+          totalEarnings: 0,
+          badge: null,
+          createdAt: user!.createdAt
+        }));
+      
+      res.json(soloTeams);
+    }
+  });
+  
   app.post(`${API_PREFIX}/tournaments/:id/matches`, async (req, res) => {
     try {
       const tournamentId = parseInt(req.params.id);

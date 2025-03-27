@@ -1,124 +1,200 @@
-import { Match } from "@shared/schema";
+import React, { useEffect, useState } from "react";
+import { Match, Team } from "@shared/schema";
+import { cn } from "@/lib/utils";
+import { Badge } from "@/components/ui/badge";
+import { useQuery } from "@tanstack/react-query";
 
-interface TournamentBracketProps {
-  matches: Match[];
-  onMatchClick?: (match: Match) => void;
+// Helper function to convert round number to round name
+function getRoundName(round: number): string {
+  if (round === 100) return 'FINAL';
+  if (round === 99) return 'SEMI-FINAL';
+  if (round === 98) return 'QUARTER-FINAL';
+  return `ROUND ${round}`;
 }
 
-export function TournamentBracket({ matches, onMatchClick }: TournamentBracketProps) {
-  // Group matches by round
-  const roundMatches: Record<number, Match[]> = {};
-  
-  matches.forEach(match => {
-    if (!roundMatches[match.round]) {
-      roundMatches[match.round] = [];
-    }
-    roundMatches[match.round].push(match);
+interface MatchProps {
+  match: Match;
+  className?: string;
+}
+
+const MatchCard = ({ match, className }: MatchProps) => {
+  const { data: team1 } = useQuery<Team>({
+    queryKey: ['/api/teams', match.team1Id],
+    enabled: !!match.team1Id,
   });
-  
-  const rounds = Object.keys(roundMatches).map(Number).sort((a, b) => a - b);
-  const maxRound = Math.max(...rounds);
-  
+
+  const { data: team2 } = useQuery<Team>({
+    queryKey: ['/api/teams', match.team2Id],
+    enabled: !!match.team2Id,
+  });
+
   return (
-    <div className="overflow-x-auto pb-4">
-      <div className="min-w-[800px]">
-        <div className="flex justify-between">
-          {rounds.map((round, index) => (
-            <div key={round} className="flex flex-col space-y-4 w-[22%]">
-              <div className="text-xs text-gray-400 mb-2 font-medium">
-                {round === 1 ? 'QUARTER FINALS' : round === 2 ? 'SEMI FINALS' : round === 3 ? 'FINALS' : `ROUND ${round}`}
-              </div>
-              
-              {roundMatches[round].map((match, matchIndex) => {
-                const isFinal = round === maxRound;
-                const marginTop = round > 1 ? (matchIndex === 0 ? 16 : 24) : 0;
-                
-                return (
-                  <div key={match.id}>
-                    <div 
-                      className={`bg-gray-800 rounded border ${isFinal ? 'border-accent-blue neon-border' : 'border-gray-700'} p-2 ${marginTop > 0 ? `mt-${marginTop}` : ''} cursor-pointer transition-all hover:border-accent-blue/70 hover:shadow-lg hover:shadow-accent-blue/10`}
-                      onClick={() => onMatchClick?.(match)}
-                    >
-                      <div className="flex justify-between items-center mb-2 p-1 bg-gray-900 rounded">
-                        <div className="flex items-center">
-                          <span className="w-5 h-5 rounded bg-accent-blue/20 flex items-center justify-center text-xs mr-2">
-                            {match.team1Id || "?"}
-                          </span>
-                          <span className="text-sm font-medium">
-                            {match.team1Id ? `Team ${String.fromCharCode(64 + match.team1Id)}` : "TBD"}
-                          </span>
-                        </div>
-                        <span className={`font-medium ${match.winnerId === match.team1Id ? 'text-accent-green' : 'text-gray-400'}`}>
-                          {match.team1Score || "?"}
-                        </span>
-                      </div>
-                      
-                      <div className="flex justify-between items-center p-1 bg-gray-900 rounded">
-                        <div className="flex items-center">
-                          <span className="w-5 h-5 rounded bg-accent-blue/20 flex items-center justify-center text-xs mr-2">
-                            {match.team2Id || "?"}
-                          </span>
-                          <span className="text-sm font-medium">
-                            {match.team2Id ? `Team ${String.fromCharCode(64 + match.team2Id)}` : "TBD"}
-                          </span>
-                        </div>
-                        <span className={`font-medium ${match.winnerId === match.team2Id ? 'text-accent-green' : 'text-gray-400'}`}>
-                          {match.team2Score || "?"}
-                        </span>
-                      </div>
-                    </div>
-                    
-                    {isFinal && match.winnerId && (
-                      <div className="text-center bg-accent-blue/20 p-2 rounded mt-4 border border-accent-blue">
-                        <div className="text-xs text-gray-300 mb-1">CHAMPION</div>
-                        <div className="font-rajdhani font-bold text-accent-pink">
-                          {match.winnerId ? `TEAM ${String.fromCharCode(64 + match.winnerId)}` : "TBD"}
-                        </div>
-                        <div className="text-xs text-accent-green mt-1">₹25,000 Prize</div>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
+    <div className={cn("bg-secondary-bg/80 backdrop-blur rounded-lg overflow-hidden", className)}>
+      <div className="px-3 py-2 bg-primary-700/30 text-xs text-gray-400">
+        {getRoundName(match.round)}
+        {match.matchNumber !== null && <span> - Match {match.matchNumber}</span>}
+      </div>
+      
+      <div className="p-3">
+        <div className={cn(
+          "flex items-center justify-between p-2 rounded-md", 
+          match.winnerId === match.team1Id ? "bg-accent-green/10 border-l-2 border-accent-green" : "",
+          !match.team1Id ? "opacity-60" : ""
+        )}>
+          <div className="flex items-center">
+            <div className="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center overflow-hidden mr-2">
+              {team1?.logoUrl ? (
+                <img src={team1.logoUrl} alt={team1.name} className="w-full h-full object-cover" />
+              ) : (
+                <span className="text-xs font-medium text-gray-300">
+                  {team1?.name ? team1.name.substring(0, 2).toUpperCase() : "TBD"}
+                </span>
+              )}
             </div>
-          ))}
-          
-          {/* Prize Distribution */}
-          <div className="w-[22%] flex flex-col">
-            <div className="text-xs text-gray-400 mb-2 font-medium">PRIZE DISTRIBUTION</div>
-            <div className="bg-gray-800 rounded border border-gray-700 p-4 space-y-4">
-              <div>
-                <div className="text-xs text-gray-400 mb-1">1st Place</div>
-                <div className="flex justify-between">
-                  <span className="font-medium">Team Golf</span>
-                  <span className="text-accent-green">₹25,000</span>
-                </div>
-              </div>
-              <div>
-                <div className="text-xs text-gray-400 mb-1">2nd Place</div>
-                <div className="flex justify-between">
-                  <span className="font-medium">Team Alpha</span>
-                  <span className="text-accent-green">₹15,000</span>
-                </div>
-              </div>
-              <div>
-                <div className="text-xs text-gray-400 mb-1">3rd-4th Place</div>
-                <div className="flex justify-between">
-                  <span className="font-medium">Teams Charlie & Foxtrot</span>
-                  <span className="text-accent-green">₹5,000 each</span>
-                </div>
-              </div>
-              <div className="pt-2 mt-2 border-t border-gray-700">
-                <div className="text-xs text-accent-yellow mb-1">MVP Award</div>
-                <div className="flex justify-between">
-                  <span className="font-medium">GhostSniper (Team Golf)</span>
-                  <span className="text-accent-green">₹2,000</span>
-                </div>
-              </div>
-            </div>
+            <span className="text-sm font-medium text-gray-200">{team1?.name || "TBD"}</span>
+          </div>
+          <div className="text-sm font-bold">
+            {match.team1Score !== null ? match.team1Score : "-"}
           </div>
         </div>
+        
+        <div className="my-2 text-xs text-center text-gray-500">VS</div>
+        
+        <div className={cn(
+          "flex items-center justify-between p-2 rounded-md", 
+          match.winnerId === match.team2Id ? "bg-accent-green/10 border-l-2 border-accent-green" : "",
+          !match.team2Id ? "opacity-60" : ""
+        )}>
+          <div className="flex items-center">
+            <div className="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center overflow-hidden mr-2">
+              {team2?.logoUrl ? (
+                <img src={team2.logoUrl} alt={team2.name} className="w-full h-full object-cover" />
+              ) : (
+                <span className="text-xs font-medium text-gray-300">
+                  {team2?.name ? team2.name.substring(0, 2).toUpperCase() : "TBD"}
+                </span>
+              )}
+            </div>
+            <span className="text-sm font-medium text-gray-200">{team2?.name || "TBD"}</span>
+          </div>
+          <div className="text-sm font-bold">
+            {match.team2Score !== null ? match.team2Score : "-"}
+          </div>
+        </div>
+        
+        {match.status === 'scheduled' && (
+          <div className="mt-2 text-center">
+            <Badge variant="outline" className="text-xs">
+              {new Date(match.scheduledTime).toLocaleString('en-US', {
+                month: 'short',
+                day: 'numeric',
+                hour: 'numeric',
+                minute: '2-digit'
+              })}
+            </Badge>
+          </div>
+        )}
+        
+        {match.status === 'live' && (
+          <div className="mt-2 text-center">
+            <Badge className="bg-red-500 text-white text-xs">
+              <span className="inline-block w-2 h-2 rounded-full bg-white animate-pulse mr-1"></span>
+              LIVE NOW
+            </Badge>
+          </div>
+        )}
+        
+        {match.status === 'completed' && match.winnerId && (
+          <div className="mt-2 text-center">
+            <Badge variant="secondary" className="text-xs">
+              COMPLETED
+            </Badge>
+          </div>
+        )}
       </div>
     </div>
   );
+};
+
+interface TournamentBracketProps {
+  matches: Match[];
 }
+
+export const TournamentBracket = ({ matches }: TournamentBracketProps) => {
+  const [rounds, setRounds] = useState<{[key: string]: Match[]}>({});
+  
+  useEffect(() => {
+    // Group matches by round
+    const groupedMatches: {[key: string]: Match[]} = {};
+    
+    for (const match of matches) {
+      if (!groupedMatches[match.round]) {
+        groupedMatches[match.round] = [];
+      }
+      groupedMatches[match.round].push(match);
+    }
+    
+    // Sort matches within each round
+    for (const round in groupedMatches) {
+      groupedMatches[round].sort((a, b) => {
+        if (a.matchNumber === null) return 1;
+        if (b.matchNumber === null) return -1;
+        return a.matchNumber - b.matchNumber;
+      });
+    }
+    
+    // Sort rounds in progression order
+    const orderedRounds: {[key: string]: Match[]} = {};
+    const roundOrder = ['1', '2', '3', '4', '5', '6', '98', '99', '100']; // 98 = quarter, 99 = semi, 100 = final
+    
+    for (const round of roundOrder) {
+      if (groupedMatches[round]) {
+        orderedRounds[round] = groupedMatches[round];
+      }
+    }
+    
+    setRounds(orderedRounds);
+  }, [matches]);
+  
+  const numRounds = Object.keys(rounds).length;
+  
+  if (numRounds === 0) {
+    return (
+      <div className="text-center py-8">
+        <p className="text-gray-400">No matches have been scheduled yet.</p>
+      </div>
+    );
+  }
+  
+  return (
+    <div className="overflow-x-auto pb-4">
+      <div className="flex" style={{ minWidth: `${numRounds * 300}px` }}>
+        {Object.entries(rounds).map(([round, roundMatches], roundIndex) => (
+          <div key={round} className="flex-1 px-3">
+            <div className="mb-4 text-center">
+              <h4 className="text-lg font-semibold text-white">
+                {Number(round) === 100 ? 'Final' : 
+                 Number(round) === 99 ? 'Semi-Finals' : 
+                 Number(round) === 98 ? 'Quarter-Finals' : 
+                 `Round ${round}`}
+              </h4>
+            </div>
+            
+            <div className="space-y-6">
+              {roundMatches.map((match) => (
+                <MatchCard
+                  key={match.id}
+                  match={match}
+                  className={cn(
+                    "mx-auto",
+                    roundIndex === numRounds - 1 ? "w-full max-w-xs" : "w-full max-w-xs"
+                  )}
+                />
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};

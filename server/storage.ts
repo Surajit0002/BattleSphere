@@ -5,6 +5,8 @@ import {
   type TournamentRegistration, type InsertTournamentRegistration, type Match, type InsertMatch,
   type LeaderboardEntry, type InsertLeaderboardEntry, type WalletTransaction, type InsertWalletTransaction
 } from "@shared/schema";
+import { db } from "./db";
+import { eq, and, desc, asc, sql, like, isNull, or } from "drizzle-orm";
 
 export interface IStorage {
   // User operations
@@ -775,4 +777,337 @@ export class MemStorage implements IStorage {
   }
 }
 
-export const storage = new MemStorage();
+export class DatabaseStorage implements IStorage {
+  async getUser(id: number): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user;
+  }
+
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.username, username));
+    return user;
+  }
+
+  async createUser(insertUser: InsertUser): Promise<User> {
+    const [user] = await db.insert(users).values(insertUser).returning();
+    return user;
+  }
+
+  async updateUserWallet(userId: number, amount: number): Promise<User> {
+    const [user] = await db
+      .update(users)
+      .set({ walletBalance: sql`${users.walletBalance} + ${amount}` })
+      .where(eq(users.id, userId))
+      .returning();
+    return user;
+  }
+
+  async getGames(): Promise<Game[]> {
+    return db.select().from(games);
+  }
+
+  async getGame(id: number): Promise<Game | undefined> {
+    const [game] = await db.select().from(games).where(eq(games.id, id));
+    return game;
+  }
+
+  async getFeaturedGames(): Promise<Game[]> {
+    return db.select().from(games).where(eq(games.featured, true));
+  }
+
+  async createGame(insertGame: InsertGame): Promise<Game> {
+    const [game] = await db.insert(games).values(insertGame).returning();
+    return game;
+  }
+
+  async getTeams(): Promise<Team[]> {
+    return db.select().from(teams);
+  }
+
+  async getTeam(id: number): Promise<Team | undefined> {
+    const [team] = await db.select().from(teams).where(eq(teams.id, id));
+    return team;
+  }
+
+  async getTopTeams(limit: number): Promise<Team[]> {
+    return db.select().from(teams).orderBy(desc(teams.wins)).limit(limit);
+  }
+
+  async getTeamsByUserId(userId: number): Promise<Team[]> {
+    const memberTeams = await db
+      .select({
+        teamId: teamMembers.teamId,
+      })
+      .from(teamMembers)
+      .where(eq(teamMembers.userId, userId));
+
+    const teamIds = memberTeams.map(t => t.teamId);
+    if (teamIds.length === 0) return [];
+
+    return db
+      .select()
+      .from(teams)
+      .where(sql`${teams.id} IN (${teamIds.join(",")})`);
+  }
+
+  async createTeam(insertTeam: InsertTeam): Promise<Team> {
+    const [team] = await db.insert(teams).values(insertTeam).returning();
+    return team;
+  }
+
+  async getTeamMembers(teamId: number): Promise<TeamMember[]> {
+    return db.select().from(teamMembers).where(eq(teamMembers.teamId, teamId));
+  }
+
+  async addTeamMember(insertTeamMember: InsertTeamMember): Promise<TeamMember> {
+    const [member] = await db.insert(teamMembers).values(insertTeamMember).returning();
+    
+    // Update team member count
+    await db
+      .update(teams)
+      .set({ memberCount: sql`${teams.memberCount} + 1` })
+      .where(eq(teams.id, insertTeamMember.teamId));
+    
+    return member;
+  }
+
+  async getTournaments(): Promise<Tournament[]> {
+    return db.select().from(tournaments);
+  }
+
+  async getTournament(id: number): Promise<Tournament | undefined> {
+    const [tournament] = await db.select().from(tournaments).where(eq(tournaments.id, id));
+    return tournament;
+  }
+
+  async getUpcomingTournaments(limit?: number): Promise<Tournament[]> {
+    const query = db
+      .select()
+      .from(tournaments)
+      .where(eq(tournaments.status, "upcoming"))
+      .orderBy(asc(tournaments.startDate));
+    
+    if (limit) {
+      query.limit(limit);
+    }
+    
+    return query;
+  }
+
+  async getFeaturedTournament(): Promise<Tournament | undefined> {
+    const [tournament] = await db
+      .select()
+      .from(tournaments)
+      .where(eq(tournaments.featured, true));
+    
+    return tournament;
+  }
+
+  async getTournamentsByGameId(gameId: number): Promise<Tournament[]> {
+    return db
+      .select()
+      .from(tournaments)
+      .where(eq(tournaments.gameId, gameId))
+      .orderBy(asc(tournaments.startDate));
+  }
+
+  async createTournament(insertTournament: InsertTournament): Promise<Tournament> {
+    const [tournament] = await db.insert(tournaments).values(insertTournament).returning();
+    
+    // Update game tournament count
+    await db
+      .update(games)
+      .set({ tournamentCount: sql`${games.tournamentCount} + 1` })
+      .where(eq(games.id, insertTournament.gameId));
+    
+    return tournament;
+  }
+
+  async registerForTournament(insertRegistration: InsertTournamentRegistration): Promise<TournamentRegistration> {
+    const [registration] = await db
+      .insert(tournamentRegistrations)
+      .values(insertRegistration)
+      .returning();
+    
+    // Update tournament player count
+    await db
+      .update(tournaments)
+      .set({ currentPlayers: sql`${tournaments.currentPlayers} + 1` })
+      .where(eq(tournaments.id, insertRegistration.tournamentId));
+    
+    return registration;
+  }
+
+  async getTournamentRegistrations(tournamentId: number): Promise<TournamentRegistration[]> {
+    return db
+      .select()
+      .from(tournamentRegistrations)
+      .where(eq(tournamentRegistrations.tournamentId, tournamentId));
+  }
+
+  async getMatches(tournamentId: number): Promise<Match[]> {
+    return db
+      .select()
+      .from(matches)
+      .where(eq(matches.tournamentId, tournamentId))
+      .orderBy(asc(matches.round), asc(matches.matchNumber));
+  }
+
+  async createMatch(insertMatch: InsertMatch): Promise<Match> {
+    const [match] = await db.insert(matches).values(insertMatch).returning();
+    return match;
+  }
+
+  async updateMatchResult(
+    matchId: number,
+    winnerId: number,
+    team1Score: number,
+    team2Score: number
+  ): Promise<Match> {
+    const [match] = await db
+      .update(matches)
+      .set({
+        winnerId,
+        team1Score,
+        team2Score,
+        status: "completed"
+      })
+      .where(eq(matches.id, matchId))
+      .returning();
+    
+    return match;
+  }
+
+  async getLeaderboardEntries(
+    gameId?: number,
+    period: string = "weekly",
+    limit?: number
+  ): Promise<LeaderboardEntry[]> {
+    let query = db
+      .select()
+      .from(leaderboard)
+      .where(eq(leaderboard.period, period))
+      .orderBy(desc(leaderboard.points));
+    
+    if (gameId) {
+      query = query.where(eq(leaderboard.gameId, gameId));
+    }
+    
+    if (limit) {
+      query = query.limit(limit);
+    }
+    
+    return query;
+  }
+
+  async getLeaderboardEntry(
+    userId: number,
+    gameId?: number
+  ): Promise<LeaderboardEntry | undefined> {
+    let conditions = [eq(leaderboard.userId, userId)];
+    
+    if (gameId) {
+      conditions.push(eq(leaderboard.gameId!, gameId));
+    }
+    
+    const [entry] = await db
+      .select()
+      .from(leaderboard)
+      .where(and(...conditions));
+    
+    return entry;
+  }
+
+  async updateLeaderboardEntry(
+    insertEntry: InsertLeaderboardEntry
+  ): Promise<LeaderboardEntry> {
+    // Check if entry exists
+    let existingEntry: LeaderboardEntry | undefined;
+    
+    if (insertEntry.userId) {
+      const conditions = [
+        eq(leaderboard.userId!, insertEntry.userId),
+        eq(leaderboard.period, insertEntry.period || "weekly")
+      ];
+      
+      if (insertEntry.gameId) {
+        conditions.push(eq(leaderboard.gameId!, insertEntry.gameId));
+      }
+      
+      const [entry] = await db
+        .select()
+        .from(leaderboard)
+        .where(and(...conditions));
+      
+      existingEntry = entry;
+    } else if (insertEntry.teamId) {
+      const conditions = [
+        eq(leaderboard.teamId!, insertEntry.teamId),
+        eq(leaderboard.period, insertEntry.period || "weekly")
+      ];
+      
+      if (insertEntry.gameId) {
+        conditions.push(eq(leaderboard.gameId!, insertEntry.gameId));
+      }
+      
+      const [entry] = await db
+        .select()
+        .from(leaderboard)
+        .where(and(...conditions));
+      
+      existingEntry = entry;
+    }
+    
+    // Update or insert
+    if (existingEntry) {
+      const [updated] = await db
+        .update(leaderboard)
+        .set({
+          ...insertEntry,
+          updatedAt: new Date()
+        })
+        .where(eq(leaderboard.id, existingEntry.id))
+        .returning();
+      
+      return updated;
+    } else {
+      const [newEntry] = await db
+        .insert(leaderboard)
+        .values({
+          ...insertEntry,
+          updatedAt: new Date()
+        })
+        .returning();
+      
+      return newEntry;
+    }
+  }
+
+  async createWalletTransaction(
+    insertTransaction: InsertWalletTransaction
+  ): Promise<WalletTransaction> {
+    const [transaction] = await db
+      .insert(walletTransactions)
+      .values(insertTransaction)
+      .returning();
+    
+    // Update user balance
+    await this.updateUserWallet(
+      insertTransaction.userId,
+      insertTransaction.amount
+    );
+    
+    return transaction;
+  }
+
+  async getWalletTransactions(userId: number): Promise<WalletTransaction[]> {
+    return db
+      .select()
+      .from(walletTransactions)
+      .where(eq(walletTransactions.userId, userId))
+      .orderBy(desc(walletTransactions.timestamp));
+  }
+}
+
+// Use the database storage implementation
+export const storage = new DatabaseStorage();
