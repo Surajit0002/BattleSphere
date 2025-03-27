@@ -13,6 +13,11 @@ import TeamCreate from "@/pages/team-create";
 import Rewards from "@/pages/rewards";
 import Profile from "@/pages/profile";
 import Payment from "@/pages/payment";
+import Support from "@/pages/support";
+import AddFunds from "@/pages/add-funds";
+import UserDetails from "@/pages/user-details";
+import LiveStreams from "@/pages/live-streams";
+import StreamDetails from "@/pages/stream-details";
 import AdminDashboard from "@/pages/admin/dashboard";
 import AdminCreateTournament from "@/pages/admin/tournaments/create";
 
@@ -28,6 +33,11 @@ function Router() {
       <Route path="/rewards" component={Rewards}/>
       <Route path="/profile" component={Profile}/>
       <Route path="/payment/:type/:id" component={Payment}/>
+      <Route path="/support" component={Support}/>
+      <Route path="/add-funds" component={AddFunds}/>
+      <Route path="/user/:id" component={UserDetails}/>
+      <Route path="/streams" component={LiveStreams}/>
+      <Route path="/stream/:id" component={StreamDetails}/>
       <Route path="/admin/dashboard" component={AdminDashboard}/>
       <Route path="/admin/tournaments/create" component={AdminCreateTournament}/>
       <Route component={NotFound} />
