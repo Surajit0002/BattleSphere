@@ -11,6 +11,10 @@ import Leaderboard from "@/pages/leaderboard";
 import Teams from "@/pages/teams";
 import TeamCreate from "@/pages/team-create";
 import Rewards from "@/pages/rewards";
+import Profile from "@/pages/profile";
+import Payment from "@/pages/payment";
+import AdminDashboard from "@/pages/admin/dashboard";
+import AdminCreateTournament from "@/pages/admin/tournaments/create";
 
 function Router() {
   return (
@@ -22,6 +26,10 @@ function Router() {
       <Route path="/teams" component={Teams}/>
       <Route path="/teams/create" component={TeamCreate}/>
       <Route path="/rewards" component={Rewards}/>
+      <Route path="/profile" component={Profile}/>
+      <Route path="/payment/:type/:id" component={Payment}/>
+      <Route path="/admin/dashboard" component={AdminDashboard}/>
+      <Route path="/admin/tournaments/create" component={AdminCreateTournament}/>
       <Route component={NotFound} />
     </Switch>
   );
