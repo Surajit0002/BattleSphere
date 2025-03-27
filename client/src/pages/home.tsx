@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { Link } from "wouter";
 import HeroSection from "@/components/hero-section";
 import GameCard from "@/components/game-card";
 import TournamentCard from "@/components/tournament-card";
@@ -68,9 +69,9 @@ export default function Home() {
       <section className="mb-10">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-2xl font-bold font-rajdhani text-white">FEATURED GAMES</h2>
-          <a href="/tournaments" className="text-accent-blue hover:text-accent-blue/80 flex items-center font-medium">
+          <Link href="/tournaments" className="text-accent-blue hover:text-accent-blue/80 flex items-center font-medium">
             View All <i className="ri-arrow-right-line ml-1"></i>
-          </a>
+          </Link>
         </div>
         
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">

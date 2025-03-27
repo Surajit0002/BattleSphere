@@ -107,15 +107,11 @@ export default function HeroSection({
             </div>
             
             <div className="flex flex-col sm:flex-row gap-4">
-              <Link href={actionLink}>
-                <a className="inline-block bg-gradient-to-r from-primary to-primary/80 text-white px-8 py-4 rounded-lg font-rajdhani font-semibold hover:from-primary/90 hover:to-primary/70 transition shadow-lg shadow-primary/20 transform hover:-translate-y-1">
-                  {actionText} <i className="ri-arrow-right-line ml-2"></i>
-                </a>
+              <Link href={actionLink} className="inline-block bg-gradient-to-r from-primary to-primary/80 text-white px-8 py-4 rounded-lg font-rajdhani font-semibold hover:from-primary/90 hover:to-primary/70 transition shadow-lg shadow-primary/20 transform hover:-translate-y-1">
+                {actionText} <i className="ri-arrow-right-line ml-2"></i>
               </Link>
-              <Link href="/tournaments-enhanced">
-                <a className="bg-black/50 backdrop-blur-sm text-white px-8 py-4 rounded-lg font-rajdhani font-semibold hover:bg-gray-900/80 transition border border-primary/30 transform hover:-translate-y-1">
-                  ENHANCED VIEW <i className="ri-rocket-2-line ml-2"></i>
-                </a>
+              <Link href="/tournaments-enhanced" className="bg-black/50 backdrop-blur-sm text-white px-8 py-4 rounded-lg font-rajdhani font-semibold hover:bg-gray-900/80 transition border border-primary/30 transform hover:-translate-y-1">
+                ENHANCED VIEW <i className="ri-rocket-2-line ml-2"></i>
               </Link>
             </div>
           </div>

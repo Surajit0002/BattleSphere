@@ -40,10 +40,10 @@ export default function Footer() {
           <div>
             <h3 className="font-rajdhani font-semibold text-white mb-4">QUICK LINKS</h3>
             <ul className="space-y-2 text-sm">
-              <li><Link href="/tournaments"><a className="text-gray-400 hover:text-accent-blue transition-colors">Tournaments</a></Link></li>
-              <li><Link href="/leaderboard"><a className="text-gray-400 hover:text-accent-blue transition-colors">Leaderboard</a></Link></li>
-              <li><Link href="/teams"><a className="text-gray-400 hover:text-accent-blue transition-colors">Teams</a></Link></li>
-              <li><Link href="/rewards"><a className="text-gray-400 hover:text-accent-blue transition-colors">Rewards</a></Link></li>
+              <li><Link href="/tournaments" className="text-gray-400 hover:text-accent-blue transition-colors">Tournaments</Link></li>
+              <li><Link href="/leaderboard" className="text-gray-400 hover:text-accent-blue transition-colors">Leaderboard</Link></li>
+              <li><Link href="/teams" className="text-gray-400 hover:text-accent-blue transition-colors">Teams</Link></li>
+              <li><Link href="/rewards" className="text-gray-400 hover:text-accent-blue transition-colors">Rewards</Link></li>
               <li><a href="#" className="text-gray-400 hover:text-accent-blue transition-colors">Support</a></li>
             </ul>
           </div>

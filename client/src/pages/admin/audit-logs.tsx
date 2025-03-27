@@ -81,7 +81,7 @@ interface EnhancedAuditLog {
   entityName?: string;
   userAgent?: string;
   isCritical?: boolean;
-  actionDetails?: string;
+  actionDetails?: any; // Using any to support different action detail types
 }
 
 export default function AuditLogs() {
