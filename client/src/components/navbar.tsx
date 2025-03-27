@@ -59,6 +59,11 @@ export default function Navbar() {
                   Tournaments
                 </div>
               </Link>
+              <Link href="/tournaments-enhanced">
+                <div className={`${linkClasses("/tournaments-enhanced")} flex items-center`}>
+                  Enhanced <span className="ml-1 px-1 text-xs bg-primary/20 text-primary rounded">NEW</span>
+                </div>
+              </Link>
               <Link href="/streams">
                 <div className={linkClasses("/streams")}>
                   Live Streams
@@ -173,6 +178,11 @@ export default function Navbar() {
           <Link href="/tournaments">
             <div className={mobileLinkClasses("/tournaments")}>
               Tournaments
+            </div>
+          </Link>
+          <Link href="/tournaments-enhanced">
+            <div className={mobileLinkClasses("/tournaments-enhanced")}>
+              Enhanced Tournaments <span className="ml-1 px-1 text-xs bg-primary/20 text-primary rounded">NEW</span>
             </div>
           </Link>
           <Link href="/streams">

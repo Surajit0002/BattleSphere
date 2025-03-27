@@ -112,9 +112,11 @@ export default function HeroSection({
                   {actionText} <i className="ri-arrow-right-line ml-2"></i>
                 </a>
               </Link>
-              <button className="bg-black/50 backdrop-blur-sm text-white px-8 py-4 rounded-lg font-rajdhani font-semibold hover:bg-gray-900/80 transition border border-primary/30 transform hover:-translate-y-1">
-                VIEW DETAILS <i className="ri-information-line ml-2"></i>
-              </button>
+              <Link href="/tournaments-enhanced">
+                <a className="bg-black/50 backdrop-blur-sm text-white px-8 py-4 rounded-lg font-rajdhani font-semibold hover:bg-gray-900/80 transition border border-primary/30 transform hover:-translate-y-1">
+                  ENHANCED VIEW <i className="ri-rocket-2-line ml-2"></i>
+                </a>
+              </Link>
             </div>
           </div>
           
