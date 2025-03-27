@@ -32,6 +32,11 @@ const FindTeammate = lazy(() => import("@/pages/find-teammate"));
 const JoinTeam = lazy(() => import("@/pages/join-team"));
 const CreateTournament = lazy(() => import("@/pages/admin/create-tournament"));
 
+// New Admin Pages
+const UserManagement = lazy(() => import("@/pages/admin/user-management"));
+const PaymentManagement = lazy(() => import("@/pages/admin/payment-management"));
+const AuditLogs = lazy(() => import("@/pages/admin/audit-logs"));
+
 // Loading component
 const PageLoader = () => (
   <div className="flex items-center justify-center min-h-screen bg-black">
@@ -58,6 +63,29 @@ function Router() {
       <Route path="/stream/:id" component={StreamDetails}/>
       <Route path="/admin/dashboard" component={AdminDashboard}/>
       <Route path="/admin/tournaments/create" component={AdminCreateTournament}/>
+      
+      {/* Admin Pages */}
+      <Route path="/admin/user-management">
+        {() => (
+          <Suspense fallback={<PageLoader />}>
+            <UserManagement />
+          </Suspense>
+        )}
+      </Route>
+      <Route path="/admin/payment-management">
+        {() => (
+          <Suspense fallback={<PageLoader />}>
+            <PaymentManagement />
+          </Suspense>
+        )}
+      </Route>
+      <Route path="/admin/audit-logs">
+        {() => (
+          <Suspense fallback={<PageLoader />}>
+            <AuditLogs />
+          </Suspense>
+        )}
+      </Route>
       
       {/* Enhanced pages */}
       <Route path="/profile/enhanced">
