@@ -223,11 +223,18 @@ export default function TournamentCard({ tournament, game }: TournamentCardProps
             <span>{new Date(tournament.startDate).toLocaleDateString()}</span>
           </div>
           
-          <Link href={`/tournaments/${tournament.id}`}>
-            <a className="bg-primary text-white py-2 px-4 rounded-lg font-rajdhani font-medium flex items-center justify-center hover:bg-primary/90 transition-all shadow-lg shadow-primary/20">
-              {getButtonIcon(tournament.gameMode)} {getButtonText(tournament.gameMode)}
-            </a>
-          </Link>
+          <div className="flex gap-2">
+            <Link href={`/tournaments/${tournament.id}`}>
+              <a className="bg-primary text-white py-2 px-4 rounded-lg font-rajdhani font-medium flex items-center justify-center hover:bg-primary/90 transition-all shadow-lg shadow-primary/20">
+                {getButtonIcon(tournament.gameMode)} {getButtonText(tournament.gameMode)}
+              </a>
+            </Link>
+            <Link href={`/tournaments/premium/${tournament.id}`}>
+              <a className="bg-transparent border border-primary/40 text-primary py-2 px-3 rounded-lg font-rajdhani font-medium flex items-center justify-center hover:bg-primary/10 transition-all">
+                <Flame className="h-4 w-4" />
+              </a>
+            </Link>
+          </div>
         </div>
       </div>
     </div>

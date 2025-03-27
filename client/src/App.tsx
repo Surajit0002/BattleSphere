@@ -26,6 +26,7 @@ import { lazy, Suspense } from "react";
 const EnhancedProfile = lazy(() => import("@/pages/enhanced-profile"));
 const LiveMatchesEnhanced = lazy(() => import("@/pages/live-matches-enhanced"));
 const TournamentDetailsEnhanced = lazy(() => import("@/pages/tournament-details-enhanced"));
+const TournamentDetailsPremium = lazy(() => import("@/pages/tournament-details-premium"));
 const CreateTournament = lazy(() => import("@/pages/admin/create-tournament"));
 
 // Loading component
@@ -74,6 +75,13 @@ function Router() {
         {(params) => (
           <Suspense fallback={<PageLoader />}>
             <TournamentDetailsEnhanced />
+          </Suspense>
+        )}
+      </Route>
+      <Route path="/tournaments/premium/:id">
+        {(params) => (
+          <Suspense fallback={<PageLoader />}>
+            <TournamentDetailsPremium />
           </Suspense>
         )}
       </Route>
