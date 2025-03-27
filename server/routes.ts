@@ -22,6 +22,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(userWithoutPassword);
   });
   
+  // Get current user profile
+  app.get(`${API_PREFIX}/user/profile`, async (req, res) => {
+    // Mock current user - in a real app this would come from a session
+    const userId = 1; // Default user ID for the demo
+    const user = await storage.getUser(userId);
+    
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    
+    // Don't send the password
+    const { password, ...userWithoutPassword } = user;
+    res.json(userWithoutPassword);
+  });
+  
+  // Get current user's teams
+  app.get(`${API_PREFIX}/teams/user`, async (req, res) => {
+    // Mock current user - in a real app this would come from a session
+    const userId = 1; // Default user ID for the demo
+    const teams = await storage.getTeamsByUserId(userId);
+    res.json(teams);
+  });
+  
   app.post(`${API_PREFIX}/users`, async (req, res) => {
     try {
       const userData = insertUserSchema.parse(req.body);
