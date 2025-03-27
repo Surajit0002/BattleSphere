@@ -28,6 +28,8 @@ const LiveMatchesEnhanced = lazy(() => import("@/pages/live-matches-enhanced"));
 const TournamentDetailsEnhanced = lazy(() => import("@/pages/tournament-details-enhanced"));
 const TournamentDetailsPremium = lazy(() => import("@/pages/tournament-details-premium"));
 const TournamentsEnhanced = lazy(() => import("@/pages/tournaments-enhanced"));
+const FindTeammate = lazy(() => import("@/pages/find-teammate"));
+const JoinTeam = lazy(() => import("@/pages/join-team"));
 const CreateTournament = lazy(() => import("@/pages/admin/create-tournament"));
 
 // Loading component
@@ -97,6 +99,22 @@ function Router() {
         {() => (
           <Suspense fallback={<PageLoader />}>
             <TournamentsEnhanced />
+          </Suspense>
+        )}
+      </Route>
+      
+      <Route path="/find-teammate">
+        {() => (
+          <Suspense fallback={<PageLoader />}>
+            <FindTeammate />
+          </Suspense>
+        )}
+      </Route>
+      
+      <Route path="/join-team">
+        {() => (
+          <Suspense fallback={<PageLoader />}>
+            <JoinTeam />
           </Suspense>
         )}
       </Route>
