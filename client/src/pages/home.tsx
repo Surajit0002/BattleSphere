@@ -1,19 +1,19 @@
 
+import React from "react";
+import { motion } from "framer-motion";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
-import { motion } from "framer-motion";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { Game, Tournament, Match, LeaderboardEntry, Team } from "@shared/schema";
+import { Gamepad2, Trophy, Users, ArrowRight, Flame, Sparkles, TrendingUp, Calendar, Award } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Trophy, Users, Star, Calendar, Gamepad2, Trending } from "lucide-react";
-import { Game, Tournament, LeaderboardEntry, Team, Match } from "@shared/schema";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
 
 const fadeInUp = {
   initial: { opacity: 0, y: 20 },
   animate: { opacity: 1, y: 0 },
-  transition: { duration: 0.5 }
+  transition: { duration: 0.5, ease: "easeOut" }
 };
 
 export default function Home() {
@@ -40,37 +40,89 @@ export default function Home() {
   });
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-background/80">
-      {/* Hero Section */}
-      <section className="relative overflow-hidden">
-        <div className="container mx-auto px-4 py-12 md:py-20">
+    <div className="min-h-screen bg-gradient-to-b from-background/95 to-background">
+      {/* Hero Section with Parallax */}
+      <section className="relative h-[80vh] overflow-hidden">
+        <motion.div 
+          className="absolute inset-0 bg-gradient-radial from-primary/20 via-background to-background"
+          initial={{ scale: 1.1 }}
+          animate={{ scale: 1 }}
+          transition={{ duration: 20, repeat: Infinity, repeatType: "reverse" }}
+        />
+        <div className="container relative mx-auto px-4 h-full flex items-center">
           <motion.div 
-            className="text-center space-y-6"
+            className="max-w-3xl"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
+            transition={{ duration: 0.8 }}
           >
-            <h1 className="text-4xl md:text-6xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-accent-blue">
-              Welcome to BattleSphere
+            <Badge className="mb-6 bg-primary/90 hover:bg-primary px-4 py-2 text-lg font-bold uppercase animate-pulse">
+              <Flame className="w-5 h-5 mr-2" /> LIVE Tournament
+            </Badge>
+            
+            <h1 className="text-5xl md:text-7xl font-bold mb-6 leading-tight bg-clip-text text-transparent bg-gradient-to-r from-white via-primary to-accent">
+              Epic Gaming Tournaments Await
             </h1>
-            <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto">
-              Your gateway to competitive mobile gaming tournaments and community
+            
+            <p className="text-xl text-gray-300 mb-8 leading-relaxed">
+              Join the ultimate gaming battleground. Compete in tournaments, climb the leaderboards, and win epic prizes.
             </p>
+            
+            <div className="flex gap-4">
+              <Button size="lg" className="bg-primary hover:bg-primary/90">
+                Join Tournament
+              </Button>
+              <Button size="lg" variant="outline" className="border-primary/50 hover:bg-primary/10">
+                View Schedule
+              </Button>
+            </div>
           </motion.div>
         </div>
       </section>
 
+      {/* Stats Overview */}
+      <section className="py-12 bg-black/30 backdrop-blur border-y border-primary/20">
+        <div className="container mx-auto px-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+            {[
+              { icon: Trophy, label: "Active Tournaments", value: "24+" },
+              { icon: Users, label: "Active Players", value: "10K+" },
+              { icon: Award, label: "Prize Pool", value: "₹500K+" },
+              { icon: TrendingUp, label: "Daily Matches", value: "100+" }
+            ].map((stat, i) => (
+              <motion.div 
+                key={i}
+                className="text-center"
+                {...fadeInUp}
+                transition={{ delay: i * 0.1 }}
+              >
+                <stat.icon className="w-8 h-8 mx-auto mb-3 text-primary" />
+                <div className="text-3xl font-bold mb-1 bg-clip-text text-transparent bg-gradient-to-r from-primary to-accent">
+                  {stat.value}
+                </div>
+                <div className="text-gray-400">{stat.label}</div>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* Main Content */}
-      <div className="container mx-auto px-4 py-8 space-y-12">
-        {/* Featured Games Grid */}
+      <div className="container mx-auto px-4 py-12 space-y-16">
+        {/* Featured Games */}
         <section>
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-2xl font-bold flex items-center gap-2">
-              <Gamepad2 className="h-6 w-6 text-primary" />
-              Featured Games
-            </h2>
+          <div className="flex justify-between items-center mb-8">
+            <div>
+              <h2 className="text-3xl font-bold flex items-center gap-3 mb-2">
+                <Gamepad2 className="h-8 w-8 text-primary" />
+                Featured Games
+              </h2>
+              <p className="text-gray-400">Top competitive titles with active tournaments</p>
+            </div>
             <Link href="/games">
-              <Button variant="outline" size="sm">View All</Button>
+              <Button variant="outline" size="lg" className="gap-2">
+                Browse All <ArrowRight className="w-4 h-4" />
+              </Button>
             </Link>
           </div>
           
@@ -78,18 +130,19 @@ export default function Home() {
             {featuredGames?.map((game) => (
               <motion.div
                 key={game.id}
-                className="group relative aspect-square rounded-lg overflow-hidden hover-scale"
+                className="group relative aspect-square rounded-xl overflow-hidden hover:scale-105 transition-transform duration-300"
                 {...fadeInUp}
               >
                 <img 
                   src={game.imageUrl} 
                   alt={game.name}
-                  className="w-full h-full object-cover transition-transform group-hover:scale-110"
+                  className="w-full h-full object-cover transition-transform group-hover:scale-110 duration-500"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent flex items-end p-3">
-                  <div>
-                    <h3 className="text-white font-semibold">{game.name}</h3>
-                    <Badge variant="secondary" className="mt-1">Popular</Badge>
+                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent flex flex-col justify-end p-4">
+                  <h3 className="text-lg font-bold text-white mb-2">{game.name}</h3>
+                  <div className="flex gap-2">
+                    <Badge variant="secondary" className="bg-primary/20">Popular</Badge>
+                    <Badge variant="outline" className="border-primary/30">{game.genre}</Badge>
                   </div>
                 </div>
               </motion.div>
@@ -97,116 +150,58 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Tournaments and Teams Tabs */}
-        <section>
-          <Tabs defaultValue="tournaments" className="w-full">
-            <TabsList className="w-full max-w-md mx-auto mb-6">
-              <TabsTrigger value="tournaments" className="flex-1">
-                <Trophy className="h-4 w-4 mr-2" /> Tournaments
-              </TabsTrigger>
-              <TabsTrigger value="teams" className="flex-1">
-                <Users className="h-4 w-4 mr-2" /> Teams
-              </TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="tournaments">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {upcomingTournaments?.map((tournament) => (
-                  <motion.div key={tournament.id} {...fadeInUp}>
-                    <Card className="bg-card/50 backdrop-blur border-primary/10 hover:border-primary/30 transition-colors">
-                      <CardHeader>
-                        <CardTitle className="flex items-center justify-between">
-                          <span>{tournament.name}</span>
-                          <Badge>{tournament.status}</Badge>
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="space-y-2">
-                          <div className="flex items-center text-sm">
-                            <Calendar className="h-4 w-4 mr-2 text-muted-foreground" />
-                            <span>{new Date(tournament.startDate).toLocaleDateString()}</span>
-                          </div>
-                          <div className="flex items-center text-sm">
-                            <Users className="h-4 w-4 mr-2 text-muted-foreground" />
-                            <span>{tournament.currentPlayers}/{tournament.maxPlayers} Players</span>
-                          </div>
-                          <div className="flex items-center text-sm">
-                            <Trophy className="h-4 w-4 mr-2 text-accent-gold" />
-                            <span className="text-accent-gold">₹{tournament.prizePool.toLocaleString()}</span>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </motion.div>
-                ))}
+        {/* Live Tournaments */}
+        <section className="relative">
+          <div className="absolute inset-0 bg-gradient-to-r from-primary/10 via-transparent to-primary/10 rounded-2xl" />
+          <div className="relative p-8 rounded-2xl">
+            <div className="flex justify-between items-center mb-8">
+              <div>
+                <h2 className="text-3xl font-bold flex items-center gap-3 mb-2">
+                  <Trophy className="h-8 w-8 text-primary" />
+                  Live Tournaments
+                </h2>
+                <p className="text-gray-400">Ongoing battles and upcoming challenges</p>
               </div>
-            </TabsContent>
+              <Link href="/tournaments">
+                <Button variant="outline" size="lg" className="gap-2">
+                  View All <ArrowRight className="w-4 h-4" />
+                </Button>
+              </Link>
+            </div>
 
-            <TabsContent value="teams">
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                {topTeams?.map((team) => (
-                  <motion.div key={team.id} {...fadeInUp}>
-                    <Card className="bg-card/50 backdrop-blur">
-                      <CardContent className="pt-6">
-                        <div className="flex flex-col items-center text-center">
-                          <div className="w-20 h-20 rounded-full bg-primary/10 mb-4 flex items-center justify-center">
-                            {team.logoUrl ? (
-                              <img src={team.logoUrl} alt={team.name} className="w-full h-full rounded-full" />
-                            ) : (
-                              <Users className="h-8 w-8 text-primary" />
-                            )}
-                          </div>
-                          <h3 className="font-semibold">{team.name}</h3>
-                          <Badge variant="secondary" className="mt-2">Top Team</Badge>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {upcomingTournaments?.slice(0, 3).map((tournament) => (
+                <Card key={tournament.id} className="bg-black/50 backdrop-blur border-primary/20 hover:border-primary/40 transition-colors">
+                  <CardHeader>
+                    <Badge className="w-fit mb-2 bg-accent-red/90">{tournament.status}</Badge>
+                    <CardTitle>{tournament.name}</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      <div className="flex justify-between items-center">
+                        <div className="flex items-center gap-2">
+                          <Calendar className="w-4 h-4 text-gray-400" />
+                          <span>{new Date(tournament.startDate).toLocaleDateString()}</span>
                         </div>
-                      </CardContent>
-                    </Card>
-                  </motion.div>
-                ))}
-              </div>
-            </TabsContent>
-          </Tabs>
-        </section>
-
-        {/* Leaderboard Section */}
-        <section>
-          <Card className="bg-card/50 backdrop-blur">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Star className="h-5 w-5 text-accent-gold" />
-                Global Leaderboard
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ScrollArea className="h-[400px] pr-4">
-                <div className="space-y-4">
-                  {leaderboardEntries?.map((entry, index) => (
-                    <motion.div 
-                      key={entry.id}
-                      className="flex items-center gap-4 p-3 rounded-lg bg-background/50 hover:bg-background/80 transition-colors"
-                      {...fadeInUp}
-                      transition={{ delay: index * 0.1 }}
-                    >
-                      <div className="text-2xl font-bold text-muted-foreground w-8">
-                        #{index + 1}
-                      </div>
-                      <div className="flex-grow">
-                        <div className="font-semibold">{entry.playerName}</div>
-                        <div className="text-sm text-muted-foreground">{entry.gameName}</div>
-                      </div>
-                      <div className="text-right">
-                        <div className="font-semibold">{entry.score} pts</div>
-                        <div className="text-sm text-accent-green flex items-center gap-1">
-                          <Trending className="h-4 w-4" />
-                          +{entry.rankChange}
+                        <div className="flex items-center gap-2">
+                          <Users className="w-4 h-4 text-gray-400" />
+                          <span>{tournament.currentPlayers}/{tournament.maxPlayers}</span>
                         </div>
                       </div>
-                    </motion.div>
-                  ))}
-                </div>
-              </ScrollArea>
-            </CardContent>
-          </Card>
+                      <div className="flex justify-between items-center">
+                        <Badge variant="outline" className="border-accent-gold text-accent-gold">
+                          Prize: ₹{tournament.prizePool.toLocaleString()}
+                        </Badge>
+                        <Button size="sm" className="bg-primary hover:bg-primary/90">
+                          Join Now
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
         </section>
       </div>
     </div>
