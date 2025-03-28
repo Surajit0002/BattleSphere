@@ -70,7 +70,7 @@ function Router() {
       <Route path="/stream/:id" component={StreamDetails}/>
       <Route path="/admin/dashboard" component={AdminDashboard}/>
       <Route path="/admin/tournaments/create" component={AdminCreateTournamentLazy}/>
-      
+
       {/* Admin Pages */}
       <Route path="/admin/user-management">
         {() => (
@@ -93,7 +93,7 @@ function Router() {
           </Suspense>
         )}
       </Route>
-      
+
       {/* Enhanced pages */}
       <Route path="/profile/enhanced">
         {() => (
@@ -137,7 +137,7 @@ function Router() {
           </Suspense>
         )}
       </Route>
-      
+
       <Route path="/find-teammate">
         {() => (
           <Suspense fallback={<PageLoader />}>
@@ -145,7 +145,7 @@ function Router() {
           </Suspense>
         )}
       </Route>
-      
+
       <Route path="/join-team">
         {() => (
           <Suspense fallback={<PageLoader />}>
@@ -153,7 +153,7 @@ function Router() {
           </Suspense>
         )}
       </Route>
-      
+
       <Route path="/tournaments/bracket-demo">
         {() => (
           <Suspense fallback={<PageLoader />}>
@@ -161,11 +161,13 @@ function Router() {
           </Suspense>
         )}
       </Route>
-      
+
       <Route component={NotFound} />
     </Switch>
   );
 }
+
+import { ThemeProvider } from "@/components/theme-provider";
 
 function App() {
   // Determine if the current route is an admin page
@@ -174,6 +176,7 @@ function App() {
 
   return (
     <QueryClientProvider client={queryClient}>
+      <ThemeProvider> {/* Added ThemeProvider */}
       {isAdminPage ? (
         <Router />
       ) : (
@@ -182,6 +185,7 @@ function App() {
         </RootLayout>
       )}
       <Toaster />
+      </ThemeProvider> {/* Closed ThemeProvider */}
     </QueryClientProvider>
   );
 }
