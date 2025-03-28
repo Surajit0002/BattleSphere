@@ -10,7 +10,6 @@ import TournamentDetails from "@/pages/tournament-details";
 import Leaderboard from "@/pages/leaderboard";
 import Teams from "@/pages/teams";
 import TeamCreate from "@/pages/team-create";
-import Rewards from "@/pages/rewards";
 import Profile from "@/pages/profile";
 import Payment from "@/pages/payment";
 import Support from "@/pages/support";
@@ -20,6 +19,11 @@ import LiveStreams from "@/pages/live-streams";
 import StreamDetails from "@/pages/stream-details";
 import AdminDashboard from "@/pages/admin/dashboard";
 import { lazy, Suspense } from "react";
+
+// Direct-load pages
+import Dashboard from "@/pages/dashboard";
+import MatchStatistics from "@/pages/match-statistics";
+import Rewards from "@/pages/rewards";
 
 // Lazy load enhanced pages
 const EnhancedProfile = lazy(() => import("@/pages/enhanced-profile"));
@@ -49,6 +53,7 @@ function Router() {
   return (
     <Switch>
       <Route path="/" component={Home}/>
+      <Route path="/dashboard" component={Dashboard}/>
       <Route path="/tournaments" component={Tournaments}/>
       <Route path="/tournaments/:id" component={TournamentDetails}/>
       <Route path="/leaderboard" component={Leaderboard}/>
@@ -56,6 +61,7 @@ function Router() {
       <Route path="/teams/create" component={TeamCreate}/>
       <Route path="/rewards" component={Rewards}/>
       <Route path="/profile" component={Profile}/>
+      <Route path="/match-statistics/:id?" component={MatchStatistics}/>
       <Route path="/payment/:type/:id" component={Payment}/>
       <Route path="/support" component={Support}/>
       <Route path="/add-funds" component={AddFunds}/>

@@ -1,534 +1,667 @@
-import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import React, { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import RootLayout from "@/layouts/RootLayout";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Separator } from "@/components/ui/separator";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { 
+  Tooltip, 
+  TooltipContent, 
+  TooltipProvider, 
+  TooltipTrigger 
+} from "@/components/ui/tooltip";
+import {
+  Gift,
+  Trophy,
+  Calendar,
+  Clock,
+  ChevronRight,
+  CreditCard,
+  Link,
+  BarChart3,
+  Star,
+  Lock,
+  Check,
+  Rocket,
+  Users,
+  Award,
+  DollarSign,
+  Zap,
+  ExternalLink,
+  Sparkles,
+  AlertTriangle,
+} from "lucide-react";
+import { motion } from "framer-motion";
+
+// Mock data for rewards
+const mockRewards = {
+  dailyRewards: [
+    { 
+      id: 1, 
+      name: "Day 1", 
+      description: "Daily login reward", 
+      reward: "100 Coins", 
+      icon: <Gift className="h-8 w-8" />, 
+      claimed: true,
+      available: true,
+      cooldown: 0
+    },
+    { 
+      id: 2, 
+      name: "Day 2", 
+      description: "Daily login reward", 
+      reward: "150 Coins", 
+      icon: <Gift className="h-8 w-8" />, 
+      claimed: true,
+      available: true,
+      cooldown: 0
+    },
+    { 
+      id: 3, 
+      name: "Day 3", 
+      description: "Daily login reward", 
+      reward: "200 Coins", 
+      icon: <Gift className="h-8 w-8" />, 
+      claimed: false,
+      available: true,
+      cooldown: 0
+    },
+    { 
+      id: 4, 
+      name: "Day 4", 
+      description: "Daily login reward", 
+      reward: "250 Coins", 
+      icon: <Gift className="h-8 w-8" />, 
+      claimed: false,
+      available: false,
+      cooldown: 0
+    },
+    { 
+      id: 5, 
+      name: "Day 5", 
+      description: "Daily login reward", 
+      reward: "300 Coins", 
+      icon: <Gift className="h-8 w-8" />, 
+      claimed: false,
+      available: false,
+      cooldown: 0
+    },
+    { 
+      id: 6, 
+      name: "Day 6", 
+      description: "Daily login reward", 
+      reward: "350 Coins", 
+      icon: <Gift className="h-8 w-8" />, 
+      claimed: false,
+      available: false,
+      cooldown: 0
+    },
+    { 
+      id: 7, 
+      name: "Day 7", 
+      description: "Weekly Bonus", 
+      reward: "Premium Booster Pack", 
+      icon: <Gift className="h-8 w-8" />, 
+      claimed: false,
+      available: false,
+      cooldown: 0,
+      premium: true
+    },
+  ],
+  achievements: [
+    {
+      id: 1,
+      name: "Tournament Champion",
+      description: "Win your first tournament",
+      reward: "500 Coins",
+      progress: 100,
+      claimed: true,
+      icon: <Trophy className="h-8 w-8" />
+    },
+    {
+      id: 2,
+      name: "Team Builder",
+      description: "Create your first team",
+      reward: "300 Coins",
+      progress: 100,
+      claimed: true,
+      icon: <Users className="h-8 w-8" />
+    },
+    {
+      id: 3,
+      name: "Social Butterfly",
+      description: "Connect social media accounts",
+      reward: "150 Coins",
+      progress: 50,
+      claimed: false,
+      icon: <Link className="h-8 w-8" />
+    },
+    {
+      id: 4,
+      name: "Perfect Attendance",
+      description: "Log in for 30 consecutive days",
+      reward: "1,000 Coins",
+      progress: 40,
+      claimed: false,
+      icon: <Calendar className="h-8 w-8" />
+    },
+    {
+      id: 5,
+      name: "Refer a Friend",
+      description: "Invite 5 friends to BattleSphere",
+      reward: "750 Coins",
+      progress: 20,
+      claimed: false,
+      icon: <Users className="h-8 w-8" />
+    }
+  ],
+  challenges: [
+    {
+      id: 1,
+      name: "Weekly Tournament Challenge",
+      description: "Participate in at least 3 tournaments this week",
+      reward: "300 Coins",
+      progress: 2,
+      total: 3,
+      expires: "2025-04-01T00:00:00Z",
+      icon: <Trophy className="h-8 w-8" />
+    },
+    {
+      id: 2,
+      name: "Team Victory",
+      description: "Win 5 matches with your team",
+      reward: "500 Coins",
+      progress: 3,
+      total: 5,
+      expires: "2025-04-03T00:00:00Z",
+      icon: <Users className="h-8 w-8" />
+    },
+    {
+      id: 3,
+      name: "Social Media Star",
+      description: "Share 2 tournament results on social media",
+      reward: "150 Coins",
+      progress: 1,
+      total: 2,
+      expires: "2025-04-05T00:00:00Z",
+      icon: <Link className="h-8 w-8" />
+    }
+  ],
+  redeemableRewards: [
+    {
+      id: 1,
+      name: "Tournament Entry Fee Waiver",
+      description: "Enter one tournament for free",
+      cost: 1000,
+      icon: <Trophy className="h-8 w-8" />,
+      available: true,
+      cooldown: null,
+      limited: false
+    },
+    {
+      id: 2,
+      name: "Premium Profile Banner",
+      description: "Unlock an exclusive profile banner",
+      cost: 2000,
+      icon: <Award className="h-8 w-8" />,
+      available: true,
+      cooldown: null,
+      limited: false
+    },
+    {
+      id: 3,
+      name: "Team Logo Customization",
+      description: "Unlock advanced team logo customization options",
+      cost: 3000,
+      icon: <Rocket className="h-8 w-8" />,
+      available: true,
+      cooldown: null,
+      limited: false
+    },
+    {
+      id: 4,
+      name: "Exclusive Tournament Access",
+      description: "Gain access to premium tournaments",
+      cost: 5000,
+      icon: <Star className="h-8 w-8" />,
+      available: true,
+      cooldown: null,
+      limited: true,
+      limitedCount: 10
+    }
+  ],
+  rewards: [
+    {
+      id: 1,
+      name: "Free Tournament Entry",
+      description: "You've received a free tournament entry ticket",
+      date: "2025-03-28T10:00:00Z",
+      expired: false,
+      used: false,
+      icon: <Trophy className="h-8 w-8" />
+    },
+    {
+      id: 2,
+      name: "Weekly Login Bonus",
+      description: "500 Coins bonus for continuous login",
+      date: "2025-03-25T10:00:00Z",
+      expired: false,
+      used: true,
+      icon: <Gift className="h-8 w-8" />
+    },
+    {
+      id: 3,
+      name: "Tournament Participation Bonus",
+      description: "200 Coins for participating in tournament",
+      date: "2025-03-20T10:00:00Z",
+      expired: false,
+      used: true,
+      icon: <Trophy className="h-8 w-8" />
+    }
+  ],
+  userStats: {
+    coins: 3850,
+    streak: 15,
+    nextReward: "2025-03-29T00:00:00Z",
+    totalEarned: 12500,
+    totalSpent: 8650
+  }
+};
+
+interface RewardCardProps {
+  title: string;
+  description: string;
+  icon: React.ReactNode;
+  action: React.ReactNode;
+  footer?: React.ReactNode;
+  highlight?: boolean;
+}
+
+const RewardCard = ({ title, description, icon, action, footer, highlight }: RewardCardProps) => {
+  return (
+    <Card className={`overflow-hidden transition-all ${highlight ? 'border-primary shadow-md' : ''}`}>
+      <div className="relative">
+        {highlight && (
+          <div className="absolute top-0 right-0">
+            <Badge className="rounded-none rounded-bl-lg bg-primary">
+              <Zap className="h-3 w-3 mr-1" /> Available Now
+            </Badge>
+          </div>
+        )}
+        <CardContent className="pt-6">
+          <div className="flex items-start gap-4">
+            <div className={`p-3 rounded-full ${highlight ? 'bg-primary/20 text-primary' : 'bg-muted text-foreground'}`}>
+              {icon}
+            </div>
+            <div className="flex-1">
+              <h3 className="font-semibold text-lg">{title}</h3>
+              <p className="text-sm text-muted-foreground">{description}</p>
+            </div>
+          </div>
+        </CardContent>
+      </div>
+      <CardFooter className="flex justify-between p-4 pt-0">
+        {action}
+        {footer && (
+          <div className="text-xs text-muted-foreground flex items-center">
+            {footer}
+          </div>
+        )}
+      </CardFooter>
+    </Card>
+  );
+};
+
+interface DailyRewardProps {
+  reward: any;
+  day: number;
+  totalDays: number;
+}
+
+const DailyReward = ({ reward, day, totalDays }: DailyRewardProps) => {
+  const isPremium = reward.premium;
+  
+  return (
+    <div className={`relative rounded-lg border p-4 flex flex-col items-center text-center gap-2
+      ${reward.claimed ? 'bg-muted' : reward.available ? 'border-primary bg-primary/5' : ''}`}
+    >
+      {isPremium && (
+        <div className="absolute -top-2 -right-2">
+          <Badge className="bg-amber-500 text-white">
+            <Sparkles className="h-3 w-3 mr-1" />
+            Premium
+          </Badge>
+        </div>
+      )}
+      
+      <div className="text-xl font-bold">Day {day}</div>
+      
+      <div className={`p-4 rounded-full 
+        ${reward.claimed ? 'bg-muted text-muted-foreground' : 
+        reward.available ? 'bg-primary/20 text-primary' : 'bg-muted/50 text-muted-foreground'}`}
+      >
+        {reward.icon}
+      </div>
+      
+      <div className="font-medium">{reward.reward}</div>
+      
+      {reward.claimed ? (
+        <Badge variant="outline" className="gap-1">
+          <Check className="h-3 w-3" /> Claimed
+        </Badge>
+      ) : reward.available ? (
+        <Button size="sm" className="mt-2 w-full">Claim</Button>
+      ) : (
+        <Button size="sm" className="mt-2 w-full" variant="outline" disabled>
+          <Lock className="h-3 w-3 mr-1" /> Locked
+        </Button>
+      )}
+    </div>
+  );
+};
+
+const RewardDialog = ({ title, children }: { title: string; children: React.ReactNode }) => {
+  return (
+    <Dialog>
+      <DialogTrigger asChild>
+        <Button variant="outline">View Details</Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-[425px]">
+        <DialogHeader>
+          <DialogTitle>{title}</DialogTitle>
+          <DialogDescription>
+            Complete actions to earn rewards
+          </DialogDescription>
+        </DialogHeader>
+        {children}
+        <DialogFooter>
+          <Button type="submit">Close</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+};
 
 export default function RewardsPage() {
-  const [virtualCoins, setVirtualCoins] = useState(1500);
-  const [spinResult, setSpinResult] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState("daily");
   
-  const handleSpin = () => {
-    if (virtualCoins < 100) return;
+  const { data: userData } = useQuery({
+    queryKey: ["/api/user/profile"],
+    retry: false,
+  });
+  
+  const { data: rewards = mockRewards } = useQuery({
+    queryKey: ["/api/rewards"],
+    initialData: mockRewards,
+    enabled: false
+  });
+  
+  const getTimeRemaining = (dateString: string) => {
+    const now = new Date();
+    const target = new Date(dateString);
+    const diffMs = target.getTime() - now.getTime();
     
-    // Deduct coins for spinning
-    setVirtualCoins(prev => prev - 100);
+    if (diffMs <= 0) return "Expired";
     
-    // Simulate random reward
-    const rewards = [
-      "50 Coins", "100 Coins", "200 Coins", "Free Tournament Entry", 
-      "500 Coins", "₹10 Cash", "Special Avatar", "Better Luck Next Time"
-    ];
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+    const diffHours = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
     
-    const result = rewards[Math.floor(Math.random() * rewards.length)];
-    setSpinResult(result);
-    
-    // Add rewards if coins
-    if (result === "50 Coins") setVirtualCoins(prev => prev + 50);
-    if (result === "100 Coins") setVirtualCoins(prev => prev + 100);
-    if (result === "200 Coins") setVirtualCoins(prev => prev + 200);
-    if (result === "500 Coins") setVirtualCoins(prev => prev + 500);
+    if (diffDays > 0) {
+      return `${diffDays}d ${diffHours}h remaining`;
+    } else {
+      return `${diffHours}h remaining`;
+    }
   };
   
   return (
-    <>
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold font-rajdhani text-white mb-2">REWARDS & STORE</h1>
-        <p className="text-gray-400">
-          Earn coins, redeem rewards, and claim exclusive items
-        </p>
-      </div>
-      
-      {/* Wallet Summary */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-        <Card className="bg-secondary-bg border-gray-800">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg font-rajdhani text-white">Cash Balance</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold font-rajdhani text-accent-green">₹1,250</div>
-            <div className="flex mt-4">
-              <Button className="w-full bg-accent-blue hover:bg-accent-blue/90 mr-2">Add Funds</Button>
-              <Button className="w-full bg-gray-800 hover:bg-gray-700 border border-accent-blue/30">Withdraw</Button>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card className="bg-secondary-bg border-gray-800">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg font-rajdhani text-white">Virtual Coins</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold font-rajdhani text-accent-yellow">{virtualCoins}</div>
-            <div className="text-xs text-gray-400 mt-1">Exchange rate: 1000 coins = ₹1</div>
-            <div className="flex mt-4">
-              <Button className="w-full bg-gray-800 hover:bg-gray-700 mr-2">Earn More</Button>
-              <Button className="w-full bg-accent-blue hover:bg-accent-blue/90">Exchange</Button>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card className="bg-secondary-bg border-gray-800">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg font-rajdhani text-white">Daily Streaks</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold font-rajdhani text-accent-pink">5 Days</div>
-            <div className="mt-2">
-              <div className="flex justify-between text-xs mb-1">
-                <span>Progress to bonus</span>
-                <span>5/7 days</span>
-              </div>
-              <Progress value={71} className="h-2 bg-gray-700" indicatorClassName="bg-accent-pink" />
-            </div>
-            <Button className="w-full mt-4 bg-accent-pink hover:bg-accent-pink/90">Claim Daily Bonus</Button>
-          </CardContent>
-        </Card>
-      </div>
-      
-      <Tabs defaultValue="store" className="mb-6">
-        <TabsList className="bg-secondary-bg border border-gray-800 p-1">
-          <TabsTrigger value="store" className="data-[state=active]:bg-accent-blue data-[state=active]:text-white">
-            Reward Store
-          </TabsTrigger>
-          <TabsTrigger value="lucky" className="data-[state=active]:bg-accent-blue data-[state=active]:text-white">
-            Lucky Spin
-          </TabsTrigger>
-          <TabsTrigger value="challenges" className="data-[state=active]:bg-accent-blue data-[state=active]:text-white">
-            Challenges
-          </TabsTrigger>
-          <TabsTrigger value="referrals" className="data-[state=active]:bg-accent-blue data-[state=active]:text-white">
-            Referrals
-          </TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="store" className="mt-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {/* Store Items */}
-            <StoreItem 
-              title="Free Fire Character" 
-              imageUrl="https://images.unsplash.com/photo-1614294148960-9aa740632a87?ixlib=rb-4.0.3&auto=format&fit=crop&w=1170&q=80" 
-              price={5000} 
-              virtualCoins={virtualCoins}
-            />
-            
-            <StoreItem 
-              title="Gaming Backpack" 
-              imageUrl="https://images.unsplash.com/photo-1560419015-7c427e8ae5ba?ixlib=rb-4.0.3&auto=format&fit=crop&w=1170&q=80" 
-              price={7500} 
-              virtualCoins={virtualCoins}
-            />
-            
-            <StoreItem 
-              title="Tournament Pass" 
-              imageUrl="https://images.unsplash.com/photo-1640565819215-6a0123982de7?ixlib=rb-4.0.3&auto=format&fit=crop&w=1170&q=80" 
-              price={2000} 
-              virtualCoins={virtualCoins}
-            />
-            
-            <StoreItem 
-              title="Exclusive Avatar" 
-              imageUrl="https://images.unsplash.com/photo-1542751110-97427bbecf20?ixlib=rb-4.0.3&auto=format&fit=crop&w=1176&q=80" 
-              price={1000} 
-              virtualCoins={virtualCoins}
-            />
-            
-            <StoreItem 
-              title="₹100 Mobile Recharge" 
-              imageUrl="https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?ixlib=rb-4.0.3&auto=format&fit=crop&w=1176&q=80" 
-              price={10000} 
-              virtualCoins={virtualCoins}
-            />
-            
-            <StoreItem 
-              title="Gaming Headset" 
-              imageUrl="https://images.unsplash.com/photo-1563510362804-2c5d5288d30c?ixlib=rb-4.0.3&auto=format&fit=crop&w=1176&q=80" 
-              price={25000} 
-              virtualCoins={virtualCoins}
-            />
-            
-            <StoreItem 
-              title="Custom Team Logo" 
-              imageUrl="https://images.unsplash.com/photo-1559136555-9303baea8ebd?ixlib=rb-4.0.3&auto=format&fit=crop&w=1176&q=80" 
-              price={3000} 
-              virtualCoins={virtualCoins}
-            />
-            
-            <StoreItem 
-              title="Pro Membership (1 Month)" 
-              imageUrl="https://images.unsplash.com/photo-1542751371-adc38448a05e?ixlib=rb-4.0.3&auto=format&fit=crop&w=1170&q=80" 
-              price={15000} 
-              virtualCoins={virtualCoins}
-            />
-          </div>
-        </TabsContent>
-        
-        <TabsContent value="lucky" className="mt-4">
-          <div className="bg-secondary-bg rounded-lg border border-gray-800 p-6">
-            <div className="text-center mb-6">
-              <h3 className="text-2xl font-bold font-rajdhani text-white mb-2">Lucky Spin Wheel</h3>
-              <p className="text-gray-400">Try your luck and win amazing rewards! Each spin costs 100 coins.</p>
-            </div>
-            
-            <div className="flex flex-col items-center">
-              {/* Wheel representation */}
-              <div className="w-64 h-64 rounded-full border-4 border-accent-blue relative mb-6 animate-pulse-glow">
-                <div className="absolute inset-0 rounded-full bg-gray-800 flex items-center justify-center">
-                  <div className="text-center">
-                    {spinResult ? (
-                      <>
-                        <div className="text-lg font-bold mb-2 text-accent-yellow">{spinResult}</div>
-                        <div className="text-sm text-gray-400">Spin again?</div>
-                      </>
-                    ) : (
-                      <div className="text-lg font-bold text-white">Spin to Win!</div>
-                    )}
-                  </div>
-                </div>
-                <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -mt-4 w-0 h-0 border-l-8 border-r-8 border-b-8 border-b-accent-pink border-l-transparent border-r-transparent"></div>
-              </div>
-              
-              <Button 
-                className="bg-accent-pink hover:bg-accent-pink/90 text-white px-8 py-2"
-                onClick={handleSpin}
-                disabled={virtualCoins < 100}
-              >
-                Spin (100 Coins)
-              </Button>
-              
-              {virtualCoins < 100 && (
-                <div className="text-sm text-accent-pink mt-2">Not enough coins to spin!</div>
-              )}
-              
-              <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-4 w-full max-w-2xl">
-                <div className="bg-gray-800 rounded p-3">
-                  <div className="text-sm text-gray-400">Your Coins</div>
-                  <div className="text-xl font-bold text-accent-yellow">{virtualCoins}</div>
-                </div>
-                <div className="bg-gray-800 rounded p-3">
-                  <div className="text-sm text-gray-400">Today's Spins</div>
-                  <div className="text-xl font-bold text-white">3/5</div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </TabsContent>
-        
-        <TabsContent value="challenges" className="mt-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <ChallengeCard 
-              title="Win a Tournament" 
-              description="Win a tournament in any game mode" 
-              reward={1000} 
-              progress={0} 
-              target={1} 
-            />
-            
-            <ChallengeCard 
-              title="Play 5 Matches" 
-              description="Participate in 5 matches in any game" 
-              reward={300} 
-              progress={3} 
-              target={5} 
-            />
-            
-            <ChallengeCard 
-              title="Login Daily" 
-              description="Login to BattleSphere for 7 consecutive days" 
-              reward={500} 
-              progress={5} 
-              target={7} 
-            />
-            
-            <ChallengeCard 
-              title="Invite Friends" 
-              description="Invite 3 friends to join BattleSphere" 
-              reward={300} 
-              progress={1} 
-              target={3} 
-            />
-            
-            <ChallengeCard 
-              title="Achieve 10 Kills" 
-              description="Get 10 kills in a single tournament" 
-              reward={500} 
-              progress={7} 
-              target={10} 
-            />
-            
-            <ChallengeCard 
-              title="Reach Top 3" 
-              description="Finish in the top 3 of any tournament" 
-              reward={700} 
-              progress={0} 
-              target={1} 
-            />
-          </div>
-        </TabsContent>
-        
-        <TabsContent value="referrals" className="mt-4">
-          <div className="bg-secondary-bg rounded-lg border border-gray-800 p-6">
-            <div className="text-center mb-6">
-              <h3 className="text-2xl font-bold font-rajdhani text-white mb-2">Refer Friends, Earn Rewards</h3>
-              <p className="text-gray-400">Get ₹50 for each successful referral after they play their first match!</p>
-            </div>
-            
-            <div className="bg-gray-800 rounded-lg p-4 mb-6 flex items-center">
-              <div className="flex-1 mr-4">
-                <div className="text-sm text-gray-400 mb-1">Your Referral Link</div>
-                <div className="bg-gray-900 p-2 rounded text-sm overflow-x-auto">
-                  https://battlesphere.com/ref/ghostsniper123
-                </div>
-              </div>
-              <Button className="bg-accent-blue hover:bg-accent-blue/90">
-                Copy Link
-              </Button>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-              <div className="bg-gray-800 rounded p-4 text-center">
-                <div className="text-3xl font-bold text-accent-blue mb-2">5</div>
-                <div className="text-sm text-gray-400">Friends Referred</div>
-              </div>
-              <div className="bg-gray-800 rounded p-4 text-center">
-                <div className="text-3xl font-bold text-accent-green mb-2">₹200</div>
-                <div className="text-sm text-gray-400">Earnings from Referrals</div>
-              </div>
-              <div className="bg-gray-800 rounded p-4 text-center">
-                <div className="text-3xl font-bold text-accent-yellow mb-2">4</div>
-                <div className="text-sm text-gray-400">Pending Referrals</div>
-              </div>
-            </div>
-            
-            <div className="space-y-4">
-              <h4 className="font-semibold text-white mb-2">Recent Referrals</h4>
-              
-              <div className="bg-gray-800 rounded p-3 flex justify-between items-center">
-                <div className="flex items-center">
-                  <div className="w-8 h-8 rounded-full bg-accent-blue/20 mr-3 flex items-center justify-center">
-                    N
-                  </div>
-                  <div>
-                    <div className="font-medium text-white">NinjaWarrior</div>
-                    <div className="text-xs text-gray-400">Joined 2 days ago</div>
-                  </div>
-                </div>
-                <div className="text-accent-green">+₹50</div>
-              </div>
-              
-              <div className="bg-gray-800 rounded p-3 flex justify-between items-center">
-                <div className="flex items-center">
-                  <div className="w-8 h-8 rounded-full bg-accent-blue/20 mr-3 flex items-center justify-center">
-                    S
-                  </div>
-                  <div>
-                    <div className="font-medium text-white">StealthQueen</div>
-                    <div className="text-xs text-gray-400">Joined 5 days ago</div>
-                  </div>
-                </div>
-                <div className="text-accent-green">+₹50</div>
-              </div>
-              
-              <div className="bg-gray-800 rounded p-3 flex justify-between items-center">
-                <div className="flex items-center">
-                  <div className="w-8 h-8 rounded-full bg-accent-blue/20 mr-3 flex items-center justify-center">
-                    E
-                  </div>
-                  <div>
-                    <div className="font-medium text-white">EagleEye</div>
-                    <div className="text-xs text-gray-400">Joined 1 week ago</div>
-                  </div>
-                </div>
-                <div className="text-accent-green">+₹50</div>
-              </div>
-            </div>
-          </div>
-        </TabsContent>
-      </Tabs>
-      
-      {/* VIP Membership */}
-      <div className="bg-secondary-bg rounded-lg border border-gray-800 p-6 mb-10">
-        <div className="text-center mb-6">
-          <h3 className="text-2xl font-bold font-rajdhani text-white mb-2">VIP Membership Plans</h3>
-          <p className="text-gray-400">Get exclusive perks and bonuses with our premium plans</p>
-        </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden">
-            <div className="p-4 bg-gray-900 text-center">
-              <h4 className="font-rajdhani font-bold text-white">Free</h4>
-              <div className="text-2xl font-bold text-accent-blue my-2">₹0</div>
-              <div className="text-xs text-gray-400">per month</div>
-            </div>
-            <div className="p-4">
-              <ul className="space-y-2 text-sm">
-                <li className="flex items-center">
-                  <i className="ri-check-line text-accent-green mr-2"></i>
-                  Limited tournaments
-                </li>
-                <li className="flex items-center">
-                  <i className="ri-check-line text-accent-green mr-2"></i>
-                  Basic rewards
-                </li>
-                <li className="flex items-center text-gray-500">
-                  <i className="ri-close-line text-accent-pink mr-2"></i>
-                  Premium tournaments
-                </li>
-                <li className="flex items-center text-gray-500">
-                  <i className="ri-close-line text-accent-pink mr-2"></i>
-                  Exclusive rewards
-                </li>
-              </ul>
-              <Button className="w-full mt-4 bg-gray-700 hover:bg-gray-600" disabled>
-                Current Plan
-              </Button>
-            </div>
-          </div>
-          
-          <div className="bg-gray-800 rounded-lg border border-accent-yellow overflow-hidden relative">
-            <div className="absolute top-0 right-0 bg-accent-yellow text-gray-900 text-xs font-bold px-2 py-1">
-              POPULAR
-            </div>
-            <div className="p-4 bg-gray-900 text-center">
-              <h4 className="font-rajdhani font-bold text-white">Pro</h4>
-              <div className="text-2xl font-bold text-accent-yellow my-2">₹199</div>
-              <div className="text-xs text-gray-400">per month</div>
-            </div>
-            <div className="p-4">
-              <ul className="space-y-2 text-sm">
-                <li className="flex items-center">
-                  <i className="ri-check-line text-accent-green mr-2"></i>
-                  Access to all tournaments
-                </li>
-                <li className="flex items-center">
-                  <i className="ri-check-line text-accent-green mr-2"></i>
-                  Increased coin rewards
-                </li>
-                <li className="flex items-center">
-                  <i className="ri-check-line text-accent-green mr-2"></i>
-                  Priority registration
-                </li>
-                <li className="flex items-center text-gray-500">
-                  <i className="ri-close-line text-accent-pink mr-2"></i>
-                  Custom team badges
-                </li>
-              </ul>
-              <Button className="w-full mt-4 bg-accent-yellow hover:bg-accent-yellow/90 text-gray-900">
-                Upgrade Now
-              </Button>
-            </div>
-          </div>
-          
-          <div className="bg-gray-800 rounded-lg border border-accent-pink overflow-hidden">
-            <div className="p-4 bg-gray-900 text-center">
-              <h4 className="font-rajdhani font-bold text-white">Elite</h4>
-              <div className="text-2xl font-bold text-accent-pink my-2">₹499</div>
-              <div className="text-xs text-gray-400">per month</div>
-            </div>
-            <div className="p-4">
-              <ul className="space-y-2 text-sm">
-                <li className="flex items-center">
-                  <i className="ri-check-line text-accent-green mr-2"></i>
-                  All Pro features
-                </li>
-                <li className="flex items-center">
-                  <i className="ri-check-line text-accent-green mr-2"></i>
-                  Exclusive tournaments
-                </li>
-                <li className="flex items-center">
-                  <i className="ri-check-line text-accent-green mr-2"></i>
-                  Custom team badges
-                </li>
-                <li className="flex items-center">
-                  <i className="ri-check-line text-accent-green mr-2"></i>
-                  Premium support
-                </li>
-              </ul>
-              <Button className="w-full mt-4 bg-accent-pink hover:bg-accent-pink/90">
-                Upgrade Now
-              </Button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </>
-  );
-}
-
-interface StoreItemProps {
-  title: string;
-  imageUrl: string;
-  price: number;
-  virtualCoins: number;
-}
-
-function StoreItem({ title, imageUrl, price, virtualCoins }: StoreItemProps) {
-  const canAfford = virtualCoins >= price;
-  
-  return (
-    <Card className="bg-secondary-bg border-gray-800 overflow-hidden">
-      <div className="h-40 relative">
-        <img 
-          src={imageUrl} 
-          alt={title} 
-          className="w-full h-full object-cover"
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-gray-900 to-transparent"></div>
-        <div className="absolute bottom-2 right-2 bg-accent-yellow text-gray-900 text-xs font-bold px-2 py-1 rounded">
-          {price} Coins
-        </div>
-      </div>
-      <CardContent className="p-4">
-        <h4 className="font-medium text-white mb-4">{title}</h4>
-        <Button 
-          className={`w-full ${canAfford ? 'bg-accent-blue hover:bg-accent-blue/90' : 'bg-gray-700'}`}
-          disabled={!canAfford}
-        >
-          {canAfford ? 'Redeem' : 'Not Enough Coins'}
-        </Button>
-      </CardContent>
-    </Card>
-  );
-}
-
-interface ChallengeCardProps {
-  title: string;
-  description: string;
-  reward: number;
-  progress: number;
-  target: number;
-}
-
-function ChallengeCard({ title, description, reward, progress, target }: ChallengeCardProps) {
-  const isComplete = progress >= target;
-  const progressPercentage = Math.min(100, (progress / target) * 100);
-  
-  return (
-    <Card className="bg-secondary-bg border-gray-800">
-      <CardHeader className="pb-2">
-        <CardTitle className="text-lg font-rajdhani text-white">{title}</CardTitle>
-        <CardDescription>{description}</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div className="flex justify-between text-sm mb-1">
-          <span>Progress</span>
-          <span>{progress}/{target}</span>
-        </div>
-        <Progress value={progressPercentage} className="h-2 bg-gray-700" />
-        
-        <div className="flex justify-between items-center mt-4">
+    <RootLayout>
+      <div className="container py-8 max-w-7xl mx-auto">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
           <div>
-            <div className="text-xs text-gray-400">Reward</div>
-            <div className="text-lg font-medium text-accent-yellow">{reward} Coins</div>
+            <h1 className="text-3xl font-bold tracking-tight">Rewards Center</h1>
+            <p className="text-muted-foreground">Complete challenges, earn achievements, and redeem rewards</p>
           </div>
-          <Button 
-            className={isComplete ? 'bg-accent-blue hover:bg-accent-blue/90' : 'bg-gray-700'} 
-            disabled={!isComplete}
-          >
-            {isComplete ? 'Claim' : 'In Progress'}
-          </Button>
+          
+          <Card className="p-4 w-full md:w-auto">
+            <div className="flex gap-6">
+              <div>
+                <div className="text-sm text-muted-foreground">Your Balance</div>
+                <div className="text-2xl font-bold flex items-center gap-1">
+                  <DollarSign className="h-5 w-5 text-amber-500" />
+                  {rewards.userStats.coins.toLocaleString()}
+                </div>
+              </div>
+              
+              <div>
+                <div className="text-sm text-muted-foreground">Login Streak</div>
+                <div className="text-2xl font-bold flex items-center gap-1">
+                  <Calendar className="h-5 w-5 text-primary" />
+                  {rewards.userStats.streak} days
+                </div>
+              </div>
+            </div>
+          </Card>
         </div>
-      </CardContent>
-    </Card>
+        
+        <Tabs defaultValue="daily" className="space-y-6" onValueChange={setActiveTab}>
+          <TabsList className="grid w-full md:w-[600px] grid-cols-2 md:grid-cols-4">
+            <TabsTrigger value="daily">Daily Rewards</TabsTrigger>
+            <TabsTrigger value="achievements">Achievements</TabsTrigger>
+            <TabsTrigger value="challenges">Challenges</TabsTrigger>
+            <TabsTrigger value="redeem">Redeem</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="daily" className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-7 gap-4">
+              {rewards.dailyRewards.map((reward, index) => (
+                <DailyReward 
+                  key={reward.id} 
+                  reward={reward} 
+                  day={index + 1} 
+                  totalDays={rewards.dailyRewards.length} 
+                />
+              ))}
+            </div>
+            
+            <Alert className="bg-primary/10 border-primary">
+              <Zap className="h-5 w-5 text-primary" />
+              <AlertTitle>Don't miss your daily rewards!</AlertTitle>
+              <AlertDescription>
+                Log in every day to receive rewards. If you miss a day, your streak will reset.
+              </AlertDescription>
+            </Alert>
+            
+            <div className="text-sm text-muted-foreground flex items-center justify-center gap-2">
+              <Clock className="h-4 w-4" />
+              <span>Next daily reward available in: 12h 34m</span>
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="achievements" className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {rewards.achievements.map((achievement) => (
+                <RewardCard
+                  key={achievement.id}
+                  title={achievement.name}
+                  description={achievement.description}
+                  icon={achievement.icon}
+                  highlight={achievement.progress === 100 && !achievement.claimed}
+                  action={
+                    achievement.claimed ? (
+                      <Badge variant="outline" className="gap-1">
+                        <Check className="h-3 w-3" /> Claimed
+                      </Badge>
+                    ) : achievement.progress === 100 ? (
+                      <Button>Claim {achievement.reward}</Button>
+                    ) : (
+                      <Button variant="outline" disabled>In Progress</Button>
+                    )
+                  }
+                  footer={
+                    achievement.claimed ? null : (
+                      <div className="w-full">
+                        <div className="flex justify-between text-xs mb-1">
+                          <span>Progress</span>
+                          <span>{achievement.progress}%</span>
+                        </div>
+                        <Progress value={achievement.progress} className="h-2" />
+                      </div>
+                    )
+                  }
+                />
+              ))}
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="challenges" className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {rewards.challenges.map((challenge) => (
+                <RewardCard
+                  key={challenge.id}
+                  title={challenge.name}
+                  description={challenge.description}
+                  icon={challenge.icon}
+                  highlight={false}
+                  action={
+                    <Button 
+                      variant={challenge.progress === challenge.total ? "default" : "outline"}
+                      disabled={challenge.progress !== challenge.total}
+                    >
+                      {challenge.progress === challenge.total ? `Claim ${challenge.reward}` : "In Progress"}
+                    </Button>
+                  }
+                  footer={
+                    <>
+                      <div className="w-full">
+                        <div className="flex justify-between text-xs mb-1">
+                          <span>Progress</span>
+                          <span>{challenge.progress} / {challenge.total}</span>
+                        </div>
+                        <Progress 
+                          value={(challenge.progress / challenge.total) * 100} 
+                          className="h-2" 
+                        />
+                      </div>
+                      <div className="mt-2 flex items-center gap-1 text-xs">
+                        <Clock className="h-3 w-3" />
+                        <span>{getTimeRemaining(challenge.expires)}</span>
+                      </div>
+                    </>
+                  }
+                />
+              ))}
+            </div>
+            
+            <Alert className="bg-muted">
+              <AlertTriangle className="h-5 w-5" />
+              <AlertTitle>Weekly Challenges</AlertTitle>
+              <AlertDescription>
+                New challenges are available every week. Complete them before they expire to earn rewards.
+              </AlertDescription>
+            </Alert>
+          </TabsContent>
+          
+          <TabsContent value="redeem" className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {rewards.redeemableRewards.map((reward) => (
+                <RewardCard
+                  key={reward.id}
+                  title={reward.name}
+                  description={reward.description}
+                  icon={reward.icon}
+                  highlight={rewards.userStats.coins >= reward.cost}
+                  action={
+                    <div className="flex flex-col gap-2">
+                      <div className="flex items-center gap-1 font-semibold">
+                        <DollarSign className="h-4 w-4 text-amber-500" />
+                        <span>{reward.cost.toLocaleString()} Coins</span>
+                      </div>
+                      <Button 
+                        disabled={rewards.userStats.coins < reward.cost}
+                        variant={rewards.userStats.coins >= reward.cost ? "default" : "outline"}
+                      >
+                        Redeem Now
+                      </Button>
+                    </div>
+                  }
+                  footer={
+                    reward.limited ? (
+                      <Badge variant="outline" className="gap-1">
+                        <AlertTriangle className="h-3 w-3" /> Limited: {reward.limitedCount} left
+                      </Badge>
+                    ) : null
+                  }
+                />
+              ))}
+            </div>
+            
+            <Card>
+              <CardHeader>
+                <CardTitle>Your Rewards</CardTitle>
+                <CardDescription>
+                  Rewards you've earned but haven't used yet
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {rewards.rewards.filter(r => !r.used && !r.expired).map((reward) => (
+                    <div key={reward.id} className="flex items-center justify-between border-b pb-4 last:border-0 last:pb-0">
+                      <div className="flex items-center gap-3">
+                        <div className="bg-primary/10 p-2 rounded-full text-primary">
+                          {reward.icon}
+                        </div>
+                        <div>
+                          <div className="font-medium">{reward.name}</div>
+                          <div className="text-sm text-muted-foreground">{reward.description}</div>
+                          <div className="text-xs text-muted-foreground mt-1">
+                            Received: {new Date(reward.date).toLocaleDateString()}
+                          </div>
+                        </div>
+                      </div>
+                      <Button size="sm">Use</Button>
+                    </div>
+                  ))}
+                  
+                  {rewards.rewards.filter(r => !r.used && !r.expired).length === 0 && (
+                    <div className="text-center py-6 text-muted-foreground">
+                      <Gift className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                      <p>No unused rewards</p>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Alert>
+              <DollarSign className="h-5 w-5" />
+              <AlertTitle>Coin Balance</AlertTitle>
+              <AlertDescription className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-6">
+                <div className="flex items-center gap-2">
+                  <span className="text-muted-foreground">Total Earned:</span>
+                  <span className="font-medium">{rewards.userStats.totalEarned.toLocaleString()} Coins</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-muted-foreground">Total Spent:</span>
+                  <span className="font-medium">{rewards.userStats.totalSpent.toLocaleString()} Coins</span>
+                </div>
+              </AlertDescription>
+            </Alert>
+          </TabsContent>
+        </Tabs>
+      </div>
+    </RootLayout>
   );
 }

@@ -1,952 +1,738 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/queryClient";
-import { useToast } from "@/hooks/use-toast";
-import { Link } from "wouter";
-
+import { Link, useParams } from "wouter";
+import RootLayout from "@/layouts/RootLayout";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
+import { 
+  Tooltip, 
+  TooltipContent, 
+  TooltipProvider, 
+  TooltipTrigger 
+} from "@/components/ui/tooltip";
+import {
+  Trophy,
+  Users,
+  Medal,
+  Star,
+  Settings,
+  User,
+  Calendar,
+  Shield,
+  BookOpen,
+  BarChart3,
+  ArrowUp,
+  ArrowDown,
+  Clock,
+  DollarSign,
+  Gamepad2,
+  MapPin,
+  Mail,
+  Link2,
+  Building,
+  Edit,
+  Heart,
+  AlertCircle,
+  ThumbsUp,
+  Flag
+} from "lucide-react";
+import { motion } from "framer-motion";
 
-import { Award, Calendar, CalendarClock, ChevronUp, Clock, CreditCard, Edit, Eye, Flag, GameController, Gamepad2, Goal, ListOrdered, Mail, MapPin, Medal, MessageSquare, ShieldCheck, Swords, Trophy, Users } from "lucide-react";
-
-// Define achievement interface
-interface Achievement {
-  id: number;
-  name: string;
-  description: string;
-  icon: string;
-  rarity: "common" | "uncommon" | "rare" | "epic" | "legendary";
-  unlockedAt: string | null;
-}
-
-// Define match history interface
-interface MatchHistory {
-  id: number;
-  tournamentName: string;
-  gameId: number;
-  gameName: string;
-  date: string;
-  result: "win" | "loss" | "draw";
-  placement: number;
-  score: number;
-  kills: number;
-  teamId?: number;
-  teamName?: string;
-}
-
-export default function EnhancedProfile() {
-  const [selectedTab, setSelectedTab] = useState("overview");
-  const { toast } = useToast();
-
-  // Fetch user profile data
-  const { data: user, isLoading: isLoadingUser } = useQuery({
-    queryKey: ["/api/user/profile"],
-  });
-
-  // Fetch user stats data
-  const { data: stats } = useQuery({
-    queryKey: ["/api/user/stats"],
-    queryFn: () => 
-      apiRequest("/api/user/stats").catch(() => {
-        // Return mock data if API doesn't exist yet
-        return {
-          totalMatches: 87,
-          wins: 29,
-          topTenFinishes: 52,
-          winRate: 33.3,
-          avgPlacement: 8.2,
-          totalKills: 346,
-          kdRatio: 3.98,
-          totalEarnings: 7800,
-          tournamentCount: 21,
-          experiencePoints: 12580,
-          currentLevel: 34,
-          nextLevelXp: 15000,
-        };
-      }),
-  });
-
-  // Fetch achievements data
-  const { data: achievements } = useQuery({
-    queryKey: ["/api/user/achievements"],
-    queryFn: () => 
-      apiRequest("/api/user/achievements").catch(() => {
-        // Return mock data if API doesn't exist yet
-        return [
-          {
-            id: 1,
-            name: "First Victory",
-            description: "Win your first match",
-            icon: "trophy",
-            rarity: "common",
-            unlockedAt: "2023-11-15T08:32:41Z"
-          },
-          {
-            id: 2,
-            name: "Sharpshooter",
-            description: "Achieve 10+ kills in a single match",
-            icon: "target",
-            rarity: "uncommon",
-            unlockedAt: "2023-12-02T14:18:22Z"
-          },
-          {
-            id: 3,
-            name: "Tournament Champion",
-            description: "Win a tournament",
-            icon: "medal",
-            rarity: "rare",
-            unlockedAt: "2024-01-10T19:45:11Z"
-          },
-          {
-            id: 4,
-            name: "Kill Streak",
-            description: "Get 5 kills in a row without dying",
-            icon: "flame",
-            rarity: "uncommon",
-            unlockedAt: "2023-12-18T11:24:36Z"
-          },
-          {
-            id: 5,
-            name: "Squad Leader",
-            description: "Win 5 matches as a team captain",
-            icon: "users",
-            rarity: "rare",
-            unlockedAt: "2024-02-05T15:37:19Z"
-          },
-          {
-            id: 6,
-            name: "Season Master",
-            description: "Reach the top 100 in any season",
-            icon: "crown",
-            rarity: "epic",
-            unlockedAt: null
-          },
-          {
-            id: 7,
-            name: "Perfect Game",
-            description: "Win a match without taking damage",
-            icon: "shield",
-            rarity: "legendary",
-            unlockedAt: null
-          },
-          {
-            id: 8,
-            name: "Dedication",
-            description: "Play 100 matches",
-            icon: "clock",
-            rarity: "common",
-            unlockedAt: "2024-01-30T09:12:58Z"
-          }
-        ];
-      }),
-  });
-
-  // Fetch match history data
-  const { data: matchHistory } = useQuery({
-    queryKey: ["/api/user/matches"],
-    queryFn: () => 
-      apiRequest("/api/user/matches").catch(() => {
-        // Return mock data if API doesn't exist yet
-        return [
-          {
-            id: 1,
-            tournamentName: "Weekly Showdown",
-            gameId: 1,
-            gameName: "Free Fire",
-            date: "2024-03-22T14:30:00Z",
-            result: "win",
-            placement: 1,
-            score: 2850,
-            kills: 12,
-            teamId: 1,
-            teamName: "Team Golf"
-          },
-          {
-            id: 2,
-            tournamentName: "Spring Championship",
-            gameId: 2,
-            gameName: "PUBG Mobile",
-            date: "2024-03-20T18:15:00Z",
-            result: "loss",
-            placement: 7,
-            score: 1250,
-            kills: 5,
-            teamId: 1,
-            teamName: "Team Golf"
-          },
-          {
-            id: 3,
-            tournamentName: "Elite Tournament",
-            gameId: 1,
-            gameName: "Free Fire",
-            date: "2024-03-18T16:00:00Z",
-            result: "win",
-            placement: 1,
-            score: 3100,
-            kills: 14,
-            teamId: 1,
-            teamName: "Team Golf"
-          },
-          {
-            id: 4,
-            tournamentName: "Weekend Battle",
-            gameId: 3,
-            gameName: "COD Mobile",
-            date: "2024-03-16T20:30:00Z",
-            result: "loss",
-            placement: 4,
-            score: 1850,
-            kills: 8,
-            teamId: 1,
-            teamName: "Team Golf"
-          },
-          {
-            id: 5,
-            tournamentName: "Pro League Qualifier",
-            gameId: 2,
-            gameName: "PUBG Mobile",
-            date: "2024-03-15T19:00:00Z",
-            result: "win",
-            placement: 1,
-            score: 2500,
-            kills: 11,
-            teamId: 1,
-            teamName: "Team Golf"
-          }
-        ];
-      }),
-  });
-
-  const getRarityColor = (rarity: string) => {
-    switch (rarity) {
-      case "common": return "bg-gray-500";
-      case "uncommon": return "bg-green-500";
-      case "rare": return "bg-blue-500";
-      case "epic": return "bg-purple-500";
-      case "legendary": return "bg-yellow-500";
-      default: return "bg-gray-500";
+// Mock data for the profile page
+const mockUserProfile = {
+  id: 1,
+  username: "ProGamer",
+  displayName: "Alex Johnson",
+  avatar: null,
+  banner: "https://images.unsplash.com/photo-1590422749897-47726e638d08?q=80&w=2070&auto=format&fit=crop",
+  bio: "Professional esports player with 5+ years of competitive experience. Specialist in FPS and battle royale games.",
+  country: "United States",
+  joinDate: "2024-01-15",
+  role: "Pro Player",
+  verified: true,
+  email: "alex@battlesphere.com",
+  website: "alexjohnson.pro",
+  organization: "Team Alpha",
+  social: {
+    twitter: "alexjpro",
+    discord: "alexj#1234",
+    twitch: "alexjpro",
+    youtube: "AlexJohnsonGaming"
+  },
+  stats: {
+    tournaments: 28,
+    wins: 12,
+    winRate: 42.8,
+    totalMatches: 145,
+    totalPrize: 8500,
+    rank: {
+      current: "Diamond",
+      trend: "up",
+      points: 1850
     }
-  };
+  },
+  achievements: [
+    { id: 1, name: "First Victory", description: "Win your first tournament", icon: "🏆", date: "2024-01-20", rarity: "common" },
+    { id: 2, name: "Rising Star", description: "Win 3 tournaments in a row", icon: "⭐", date: "2024-02-15", rarity: "rare" },
+    { id: 3, name: "Community Leader", description: "Create a team with 10+ members", icon: "👥", date: "2024-02-28", rarity: "uncommon" },
+    { id: 4, name: "Tournament Master", description: "Participate in 25+ tournaments", icon: "🎮", date: "2024-03-10", rarity: "rare" },
+    { id: 5, name: "Prize Collector", description: "Earn over $5,000 in prize money", icon: "💰", date: "2024-03-15", rarity: "epic" }
+  ],
+  recentActivity: [
+    { id: 1, type: "tournament_join", title: "Joined Weekly Showdown", date: "2025-03-27" },
+    { id: 2, type: "match_win", title: "Won match against Team Beta", date: "2025-03-25" },
+    { id: 3, type: "team_create", title: "Created a new team", date: "2025-03-20" },
+    { id: 4, type: "achievement", title: "Earned 'Prize Collector' achievement", date: "2025-03-15" },
+    { id: 5, type: "match_loss", title: "Lost match against Team Omega", date: "2025-03-10" }
+  ],
+  teams: [
+    { id: 1, name: "Team Alpha", logo: null, role: "Captain", members: 5, wins: 10, active: true },
+    { id: 2, name: "Fire Squad", logo: null, role: "Member", members: 4, wins: 3, active: false }
+  ],
+  tournaments: [
+    { 
+      id: 1, 
+      name: "Pro League Finals", 
+      date: "2025-03-20", 
+      game: "Call of Duty", 
+      placement: 1, 
+      prize: 2500,
+      teams: 16
+    },
+    { 
+      id: 2, 
+      name: "Weekly Showdown", 
+      date: "2025-03-15",
 
-  const getResultColor = (result: string) => {
-    switch (result) {
-      case "win": return "text-green-500";
-      case "loss": return "text-red-500";
-      case "draw": return "text-yellow-500";
-      default: return "text-gray-500";
+      game: "Fortnite", 
+      placement: 3, 
+      prize: 500,
+      teams: 32
+    },
+    { 
+      id: 3, 
+      name: "Regional Championship", 
+      date: "2025-03-05", 
+      game: "Apex Legends", 
+      placement: 2, 
+      prize: 1200,
+      teams: 20
+    },
+    { 
+      id: 4, 
+      name: "Monthly Cup", 
+      date: "2025-02-20", 
+      game: "Valorant", 
+      placement: 5, 
+      prize: 300,
+      teams: 24
     }
-  };
+  ]
+};
 
-  const getAchievementIcon = (iconName: string) => {
-    switch (iconName) {
-      case "trophy": return <Trophy className="h-5 w-5" />;
-      case "target": return <Goal className="h-5 w-5" />;
-      case "medal": return <Medal className="h-5 w-5" />;
-      case "flame": return <Swords className="h-5 w-5" />;
-      case "users": return <Users className="h-5 w-5" />;
-      case "crown": return <Award className="h-5 w-5" />;
-      case "shield": return <ShieldCheck className="h-5 w-5" />;
-      case "clock": return <Clock className="h-5 w-5" />;
-      default: return <Trophy className="h-5 w-5" />;
-    }
-  };
-
-  if (isLoadingUser) {
-    return (
-      <div className="container flex items-center justify-center min-h-screen">
-        <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
-      </div>
-    );
-  }
-
-  if (!user) {
-    return (
-      <div className="container py-10 text-center">
-        <h1 className="text-2xl font-bold mb-4">User not found</h1>
-        <p className="mb-6">Please log in to view your profile</p>
-        <Button asChild>
-          <Link href="/login">Login</Link>
-        </Button>
-      </div>
-    );
-  }
-
+const ProfileHeader = ({ profile }: { profile: any }) => {
   return (
-    <div className="container py-10 min-h-screen bg-black bg-dot-white/[0.2]">
-      {/* Profile Header */}
-      <div className="relative">
-        {/* Cover Image */}
-        <div className="h-48 rounded-lg bg-gradient-to-r from-purple-900 to-blue-900 overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
-        </div>
-
-        {/* Profile Details */}
-        <div className="relative px-6 -mt-16">
-          <div className="flex flex-col md:flex-row gap-6 items-start md:items-end">
-            <Avatar className="h-32 w-32 border-4 border-background">
-              <AvatarImage src={user.profileImage || ""} alt={user.displayName} />
-              <AvatarFallback className="text-3xl bg-primary text-primary-foreground">
-                {user.displayName?.substring(0, 2).toUpperCase() || "U"}
-              </AvatarFallback>
+    <div className="relative">
+      {/* Banner */}
+      <div 
+        className="h-40 md:h-60 w-full bg-cover bg-center rounded-lg overflow-hidden" 
+        style={{ backgroundImage: `url(${profile.banner})` }}
+      >
+        <div className="absolute inset-0 bg-gradient-to-t from-background to-transparent"></div>
+      </div>
+      
+      {/* Profile Info */}
+      <div className="container max-w-7xl mx-auto px-4">
+        <div className="relative -mt-20 md:-mt-24 flex flex-col md:flex-row md:items-end md:justify-between pb-6">
+          <div className="flex flex-col md:flex-row md:items-end gap-4">
+            <Avatar className="h-32 w-32 md:h-40 md:w-40 border-4 border-background rounded-full">
+              <AvatarImage src={profile.avatar} />
+              <AvatarFallback className="text-4xl">{profile.displayName.substring(0, 2).toUpperCase()}</AvatarFallback>
             </Avatar>
-
-            <div className="flex-1 mt-4 md:mt-0">
-              <div className="flex items-center flex-wrap gap-2">
-                <h1 className="text-3xl font-bold text-white">{user.displayName}</h1>
-                {user.kycVerified && (
-                  <Badge className="bg-green-600 hover:bg-green-700">
-                    <ShieldCheck className="h-3 w-3 mr-1" /> Verified
-                  </Badge>
+            
+            <div className="pt-4 md:pb-2">
+              <div className="flex flex-wrap items-center gap-2">
+                <h1 className="text-3xl font-bold tracking-tight">{profile.displayName}</h1>
+                {profile.verified && (
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger>
+                        <Badge variant="secondary" className="ml-2">
+                          <Shield className="h-3 w-3 mr-1" /> Verified
+                        </Badge>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        Verified Professional Player
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
                 )}
               </div>
-              <p className="text-gray-400">@{user.username}</p>
               
-              <div className="flex flex-wrap gap-4 mt-2 items-center text-sm text-gray-400">
-                {stats && (
+              <div className="flex flex-wrap items-center gap-3 text-muted-foreground mt-1">
+                <div className="flex items-center gap-1">
+                  <User className="h-4 w-4" />
+                  <span>@{profile.username}</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <MapPin className="h-4 w-4" />
+                  <span>{profile.country}</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <Calendar className="h-4 w-4" />
+                  <span>Joined {new Date(profile.joinDate).toLocaleDateString()}</span>
+                </div>
+                {profile.organization && (
+                  <div className="flex items-center gap-1">
+                    <Building className="h-4 w-4" />
+                    <span>{profile.organization}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+          
+          <div className="flex flex-wrap mt-4 md:mt-0 gap-2">
+            <Button variant="secondary" className="gap-1">
+              <Heart className="h-4 w-4" />
+              <span>Follow</span>
+            </Button>
+            <Button variant="outline" className="gap-1">
+              <Mail className="h-4 w-4" />
+              <span>Message</span>
+            </Button>
+            <Button variant="outline" size="icon">
+              <Flag className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+interface StatCardProps {
+  title: string;
+  value: string | number;
+  icon: React.ReactNode;
+  trend?: {
+    direction: 'up' | 'down' | 'neutral';
+    value?: number;
+  };
+}
+
+const StatCard = ({ title, value, icon, trend }: StatCardProps) => {
+  return (
+    <Card>
+      <CardContent className="p-6">
+        <div className="flex justify-between items-start">
+          <div className="space-y-2">
+            <div className="text-muted-foreground">{title}</div>
+            <div className="text-2xl font-bold">{value}</div>
+            {trend && (
+              <div className={`text-xs flex items-center gap-1 ${
+                trend.direction === 'up' ? 'text-green-500' :
+                trend.direction === 'down' ? 'text-red-500' :
+                'text-muted-foreground'
+              }`}>
+                {trend.direction === 'up' ? (
+                  <ArrowUp className="h-3 w-3" />
+                ) : trend.direction === 'down' ? (
+                  <ArrowDown className="h-3 w-3" />
+                ) : null}
+                {trend.value && `${trend.value}%`}
+                {trend.direction === 'up' ? 'increase' : trend.direction === 'down' ? 'decrease' : 'no change'}
+              </div>
+            )}
+          </div>
+          <div className="bg-primary/10 p-2 rounded-md">
+            <div className="text-primary">{icon}</div>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
+
+const AchievementCard = ({ achievement }: { achievement: any }) => {
+  const getRarityColor = (rarity: string) => {
+    switch (rarity) {
+      case 'common': return 'bg-slate-500 text-white';
+      case 'uncommon': return 'bg-green-500 text-white';
+      case 'rare': return 'bg-blue-500 text-white';
+      case 'epic': return 'bg-purple-500 text-white';
+      case 'legendary': return 'bg-amber-500 text-white';
+      default: return 'bg-slate-500 text-white';
+    }
+  };
+
+  const getAchievementIcon = (icon: string) => {
+    switch (icon) {
+      case '🏆': return <Trophy className="h-6 w-6" />;
+      case '⭐': return <Star className="h-6 w-6" />;
+      case '👥': return <Users className="h-6 w-6" />;
+      case '🎮': return <Gamepad2 className="h-6 w-6" />;
+      case '💰': return <DollarSign className="h-6 w-6" />;
+      default: return <Medal className="h-6 w-6" />;
+    }
+  };
+
+  return (
+    <motion.div 
+      whileHover={{ scale: 1.02 }}
+      className="border rounded-lg p-4 flex flex-col items-center text-center gap-2"
+    >
+      <div className="bg-primary/10 p-4 rounded-full text-primary">
+        {getAchievementIcon(achievement.icon)}
+      </div>
+      <div className="font-semibold mt-2">{achievement.name}</div>
+      <div className="text-xs text-muted-foreground">{achievement.description}</div>
+      <Badge className={getRarityColor(achievement.rarity)}>
+        {achievement.rarity.charAt(0).toUpperCase() + achievement.rarity.slice(1)}
+      </Badge>
+      <div className="text-xs text-muted-foreground mt-1">
+        Earned {new Date(achievement.date).toLocaleDateString()}
+      </div>
+    </motion.div>
+  );
+};
+
+const TournamentHistoryItem = ({ tournament }: { tournament: any }) => {
+  const getPlacementBadge = (placement: number) => {
+    if (placement === 1) return <Badge className="bg-amber-500 text-white">1st Place</Badge>;
+    if (placement === 2) return <Badge className="bg-slate-400 text-white">2nd Place</Badge>;
+    if (placement === 3) return <Badge className="bg-amber-700 text-white">3rd Place</Badge>;
+    return <Badge variant="outline">{placement}th Place</Badge>;
+  };
+
+  return (
+    <Card>
+      <CardContent className="p-4">
+        <div className="flex justify-between items-start">
+          <div>
+            <div className="font-semibold">{tournament.name}</div>
+            <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground mt-1">
+              <div className="flex items-center gap-1">
+                <Gamepad2 className="h-3.5 w-3.5" />
+                <span>{tournament.game}</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <Calendar className="h-3.5 w-3.5" />
+                <span>{new Date(tournament.date).toLocaleDateString()}</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <Users className="h-3.5 w-3.5" />
+                <span>{tournament.teams} Teams</span>
+              </div>
+            </div>
+          </div>
+          <div className="flex flex-col items-end gap-2">
+            {getPlacementBadge(tournament.placement)}
+            {tournament.prize > 0 && (
+              <div className="text-sm font-medium flex items-center gap-1 text-green-500">
+                <DollarSign className="h-3.5 w-3.5" />
+                <span>${tournament.prize.toLocaleString()}</span>
+              </div>
+            )}
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
+
+const TeamCard = ({ team }: { team: any }) => {
+  return (
+    <Card>
+      <CardContent className="p-4">
+        <div className="flex items-center gap-4">
+          <Avatar className="h-12 w-12 border">
+            <AvatarImage src={team.logo} />
+            <AvatarFallback>{team.name.substring(0, 2).toUpperCase()}</AvatarFallback>
+          </Avatar>
+          
+          <div className="flex-1">
+            <div className="flex items-center gap-2">
+              <div className="font-semibold">{team.name}</div>
+              {!team.active && <Badge variant="outline">Inactive</Badge>}
+            </div>
+            <div className="text-sm text-muted-foreground">Role: {team.role}</div>
+            <div className="flex items-center gap-4 mt-1 text-sm">
+              <div className="flex items-center gap-1">
+                <Users className="h-3.5 w-3.5 text-muted-foreground" />
+                <span>{team.members} Members</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <Trophy className="h-3.5 w-3.5 text-muted-foreground" />
+                <span>{team.wins} Wins</span>
+              </div>
+            </div>
+          </div>
+          
+          <Button variant="outline" size="sm" asChild>
+            <Link href={`/teams/${team.id}`}>
+              View
+            </Link>
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
+
+const ActivityFeed = ({ activities }: { activities: any[] }) => {
+  const getActivityIcon = (type: string) => {
+    switch (type) {
+      case 'tournament_join': return <Gamepad2 className="h-4 w-4" />;
+      case 'match_win': return <Trophy className="h-4 w-4 text-amber-500" />;
+      case 'match_loss': return <AlertCircle className="h-4 w-4 text-red-500" />;
+      case 'team_create': return <Users className="h-4 w-4 text-blue-500" />;
+      case 'achievement': return <Medal className="h-4 w-4 text-purple-500" />;
+      default: return <Calendar className="h-4 w-4" />;
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      {activities.map((activity) => (
+        <div key={activity.id} className="flex gap-3">
+          <div className="mt-0.5 bg-muted w-8 h-8 rounded-full flex items-center justify-center">
+            {getActivityIcon(activity.type)}
+          </div>
+          <div className="flex-1">
+            <div className="font-medium">{activity.title}</div>
+            <div className="text-sm text-muted-foreground">
+              {new Date(activity.date).toLocaleDateString()}
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+};
+
+const SocialLinks = ({ social }: { social: any }) => {
+  const socialIcons: Record<string, JSX.Element> = {
+    twitter: <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-18 11.6 2.2.1 4.4-.6 6-2C3 15.5.5 9.6 3 5c2.2 2.6 5.6 4.1 9 4-.9-4.2 4-6.6 7-3.8 1.1 0 3-1.2 3-1.2z"></path></svg>,
+    discord: <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.317 4.492c-1.53-.69-3.17-1.2-4.885-1.49a.075.075 0 0 0-.079.036c-.21.369-.444.85-.608 1.23a18.566 18.566 0 0 0-5.487 0C9.095 3.88 8.852 3.4 8.641 3.03a.077.077 0 0 0-.079-.036 19.63 19.63 0 0 0-4.885 1.491c-.012.003-.022.01-.028.02C.533 8.917-.32 13.224.099 17.47c.004.031.021.057.048.073a19.782 19.782 0 0 0 5.9 2.967.08.08 0 0 0 .085-.026 14.67 14.67 0 0 0 1.257-2.034.075.075 0 0 0-.041-.105 12.96 12.96 0 0 1-1.872-.881.077.077 0 0 1-.008-.128c.126-.093.252-.191.371-.292a.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.1.246.198.372.292a.077.077 0 0 1-.006.127 12.104 12.104 0 0 1-1.873.882.077.077 0 0 0-.041.105c.36.698.772 1.362 1.256 2.033a.077.077 0 0 0 .086.028 19.712 19.712 0 0 0 5.906-2.968.076.076 0 0 0 .047-.073c.5-5.167-.838-9.538-3.549-13.438a.06.06 0 0 0-.026-.023ZM8.02 14.912c-1.161 0-2.123-1.066-2.123-2.38 0-1.314.94-2.38 2.124-2.38 1.194 0 2.147 1.079 2.123 2.38 0 1.314-.93 2.38-2.124 2.38Zm7.846 0c-1.162 0-2.124-1.066-2.124-2.38 0-1.314.94-2.38 2.123-2.38 1.193 0 2.147 1.079 2.123 2.38 0 1.314-.929 2.38-2.123 2.38Z"></path></svg>,
+    twitch: <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 2H3v16h5v4l4-4h5l4-4V2zm-10 9V7m5 4V7"></path></svg>,
+    youtube: <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22.54 6.42a2.78 2.78 0 0 0-1.94-2C18.88 4 12 4 12 4s-6.88 0-8.6.46a2.78 2.78 0 0 0-1.94 2A29 29 0 0 0 1 11.75a29 29 0 0 0 .46 5.33A2.78 2.78 0 0 0 3.4 19c1.72.46 8.6.46 8.6.46s6.88 0 8.6-.46a2.78 2.78 0 0 0 1.94-2 29 29 0 0 0 .46-5.25 29 29 0 0 0-.46-5.33z"></path><polygon points="9.75 15.02 15.5 11.75 9.75 8.48 9.75 15.02"></polygon></svg>
+  };
+
+  return (
+    <div className="flex flex-wrap gap-2">
+      {Object.entries(social).map(([platform, username]) => (
+        <TooltipProvider key={platform}>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button variant="outline" size="icon" className="rounded-full">
+                {socialIcons[platform]}
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>{platform.charAt(0).toUpperCase() + platform.slice(1)}: {username}</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      ))}
+    </div>
+  );
+};
+
+export default function EnhancedProfile() {
+  const { username } = useParams();
+  const [activeTab, setActiveTab] = useState("overview");
+  
+  // In a real app, we would fetch the user data based on the username parameter
+  // For now, we'll use our mock data
+  const { data: profile, isLoading } = useQuery({
+    queryKey: [`/api/users/${username}`],
+    initialData: mockUserProfile,
+    enabled: false
+  });
+  
+  if (isLoading) {
+    return (
+      <RootLayout>
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
+        </div>
+      </RootLayout>
+    );
+  }
+  
+  return (
+    <RootLayout>
+      <ProfileHeader profile={profile} />
+      
+      <div className="container max-w-7xl mx-auto px-4 py-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          {/* Sidebar */}
+          <div className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>About</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground">{profile.bio}</p>
+                
+                <Separator className="my-4" />
+                
+                <div className="space-y-2">
+                  {profile.email && (
+                    <div className="flex items-center gap-2">
+                      <Mail className="h-4 w-4 text-muted-foreground" />
+                      <span>{profile.email}</span>
+                    </div>
+                  )}
+                  {profile.website && (
+                    <div className="flex items-center gap-2">
+                      <Link2 className="h-4 w-4 text-muted-foreground" />
+                      <span>{profile.website}</span>
+                    </div>
+                  )}
+                </div>
+                
+                {Object.keys(profile.social).length > 0 && (
                   <>
-                    <div className="flex items-center">
-                      <Trophy className="h-4 w-4 mr-1 text-yellow-500" />
-                      <span>{stats.wins} Wins</span>
-                    </div>
-                    <div className="flex items-center">
-                      <Gamepad2 className="h-4 w-4 mr-1 text-blue-500" />
-                      <span>{stats.totalMatches} Matches</span>
-                    </div>
-                    <div className="flex items-center">
-                      <Swords className="h-4 w-4 mr-1 text-red-500" />
-                      <span>{stats.totalKills} Kills</span>
-                    </div>
-                    <div className="flex items-center">
-                      <Award className="h-4 w-4 mr-1 text-purple-500" />
-                      <span>Level {stats.currentLevel}</span>
+                    <Separator className="my-4" />
+                    <div className="space-y-2">
+                      <h3 className="text-sm font-medium">Social Links</h3>
+                      <SocialLinks social={profile.social} />
                     </div>
                   </>
                 )}
-              </div>
-            </div>
-
-            <div className="mt-4 md:mt-0 flex gap-2">
-              <Button size="sm" variant="outline" className="flex items-center gap-1 border-gray-700 hover:bg-gray-800">
-                <Edit className="h-4 w-4" />
-                <span>Edit Profile</span>
-              </Button>
-              <Button size="sm" className="flex items-center gap-1 bg-primary hover:bg-primary/90">
-                <Mail className="h-4 w-4" />
-                <span>Message</span>
-              </Button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Tabs Navigation */}
-      <Tabs value={selectedTab} onValueChange={setSelectedTab} className="mt-8">
-        <TabsList className="grid grid-cols-4 h-14 bg-gray-900/60 mb-8">
-          <TabsTrigger 
-            value="overview"
-            className={cn(
-              "data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-none",
-              "data-[state=active]:shadow-none data-[state=active]:border-b-0"
-            )}
-          >
-            Overview
-          </TabsTrigger>
-          <TabsTrigger 
-            value="achievements"
-            className={cn(
-              "data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-none",
-              "data-[state=active]:shadow-none data-[state=active]:border-b-0"
-            )}
-          >
-            Achievements
-          </TabsTrigger>
-          <TabsTrigger 
-            value="matches"
-            className={cn(
-              "data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-none",
-              "data-[state=active]:shadow-none data-[state=active]:border-b-0"
-            )}
-          >
-            Match History
-          </TabsTrigger>
-          <TabsTrigger 
-            value="wallet"
-            className={cn(
-              "data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-none",
-              "data-[state=active]:shadow-none data-[state=active]:border-b-0"
-            )}
-          >
-            Wallet
-          </TabsTrigger>
-        </TabsList>
-
-        {/* Overview Tab */}
-        <TabsContent value="overview">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* Stats Summary */}
-            <Card className="col-span-2 border border-primary/20 bg-black/60 backdrop-blur-lg shadow-lg shadow-primary/10">
-              <CardHeader>
-                <CardTitle className="text-xl flex items-center gap-2">
-                  <ListOrdered className="text-primary h-5 w-5" />
-                  Player Statistics
-                </CardTitle>
-                <CardDescription>Your gaming performance</CardDescription>
-              </CardHeader>
-              <CardContent>
-                {stats && (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                    <div className="space-y-4">
-                      <div>
-                        <div className="flex justify-between mb-1">
-                          <span className="text-sm text-gray-400">Win Rate</span>
-                          <span className="text-sm font-medium">{stats.winRate}%</span>
-                        </div>
-                        <Progress value={stats.winRate} className="h-2" />
-                      </div>
-                      
-                      <div>
-                        <div className="flex justify-between mb-1">
-                          <span className="text-sm text-gray-400">K/D Ratio</span>
-                          <span className="text-sm font-medium">{stats.kdRatio}</span>
-                        </div>
-                        <Progress value={Math.min(stats.kdRatio * 20, 100)} className="h-2" />
-                      </div>
-                      
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="bg-gray-900/40 rounded-lg p-3">
-                          <div className="text-gray-400 text-xs mb-1">Matches</div>
-                          <div className="text-xl font-bold">{stats.totalMatches}</div>
-                        </div>
-                        <div className="bg-gray-900/40 rounded-lg p-3">
-                          <div className="text-gray-400 text-xs mb-1">Wins</div>
-                          <div className="text-xl font-bold text-green-500">{stats.wins}</div>
-                        </div>
-                      </div>
-                      
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="bg-gray-900/40 rounded-lg p-3">
-                          <div className="text-gray-400 text-xs mb-1">Avg Placement</div>
-                          <div className="text-xl font-bold">{stats.avgPlacement}</div>
-                        </div>
-                        <div className="bg-gray-900/40 rounded-lg p-3">
-                          <div className="text-gray-400 text-xs mb-1">Kills</div>
-                          <div className="text-xl font-bold text-red-500">{stats.totalKills}</div>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div className="space-y-4">
-                      <div>
-                        <div className="flex justify-between mb-1">
-                          <span className="text-sm text-gray-400">Level Progress</span>
-                          <span className="text-sm font-medium">
-                            {stats.experiencePoints}/{stats.nextLevelXp} XP
-                          </span>
-                        </div>
-                        <Progress 
-                          value={(stats.experiencePoints / stats.nextLevelXp) * 100} 
-                          className="h-2" 
-                        />
-                      </div>
-                      
-                      <div className="bg-gray-900/40 rounded-lg p-3">
-                        <div className="flex justify-between items-center">
-                          <div>
-                            <div className="text-gray-400 text-xs mb-1">Current Level</div>
-                            <div className="text-2xl font-bold text-yellow-500">{stats.currentLevel}</div>
-                          </div>
-                          <div className="h-12 w-12 rounded-full flex items-center justify-center bg-yellow-500/20 text-yellow-500">
-                            <Award className="h-6 w-6" />
-                          </div>
-                        </div>
-                      </div>
-                      
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="bg-gray-900/40 rounded-lg p-3">
-                          <div className="text-gray-400 text-xs mb-1">Tournaments</div>
-                          <div className="text-xl font-bold">{stats.tournamentCount}</div>
-                        </div>
-                        <div className="bg-gray-900/40 rounded-lg p-3">
-                          <div className="text-gray-400 text-xs mb-1">Earnings</div>
-                          <div className="text-xl font-bold text-green-500">₹{stats.totalEarnings}</div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
               </CardContent>
             </Card>
-
-            {/* Recent Achievements */}
-            <Card className="border border-primary/20 bg-black/60 backdrop-blur-lg shadow-lg shadow-primary/10">
-              <CardHeader>
-                <CardTitle className="text-xl flex items-center gap-2">
-                  <Medal className="text-primary h-5 w-5" />
-                  Recent Achievements
+            
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center justify-between">
+                  <span>Career Stats</span>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-8 w-8">
+                          <Info className="h-4 w-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Career statistics across all tournaments</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
                 </CardTitle>
-                <CardDescription>Your latest unlocks</CardDescription>
               </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {achievements && achievements
-                    .filter((achievement: Achievement) => achievement.unlockedAt)
-                    .sort((a: Achievement, b: Achievement) => {
-                      return new Date(b.unlockedAt || 0).getTime() - new Date(a.unlockedAt || 0).getTime();
-                    })
-                    .slice(0, 3)
-                    .map((achievement: Achievement) => (
-                      <div key={achievement.id} className="flex items-center gap-3 p-3 bg-gray-900/40 rounded-lg">
-                        <div className={`h-10 w-10 rounded-full flex items-center justify-center ${getRarityColor(achievement.rarity)}`}>
-                          {getAchievementIcon(achievement.icon)}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <h4 className="font-medium text-sm truncate">{achievement.name}</h4>
-                          <p className="text-xs text-gray-400 truncate">{achievement.description}</p>
-                        </div>
-                        <Badge variant="outline" className="text-xs border-gray-700">
-                          {new Date(achievement.unlockedAt || "").toLocaleDateString()}
-                        </Badge>
+              <CardContent className="pb-2">
+                <div className="space-y-6">
+                  {/* Rank Progress */}
+                  <div>
+                    <div className="flex justify-between items-center mb-2">
+                      <div className="flex items-center gap-2">
+                        <Medal className="h-4 w-4 text-primary" />
+                        <span className="font-medium">Rank: {profile.stats.rank.current}</span>
                       </div>
-                    ))}
-
-                  <Button variant="outline" className="w-full mt-2 border-gray-700 hover:bg-gray-800" asChild>
-                    <Link href="#" onClick={() => setSelectedTab("achievements")}>
-                      View All Achievements
-                    </Link>
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Recent Matches */}
-            <Card className="col-span-2 border border-primary/20 bg-black/60 backdrop-blur-lg shadow-lg shadow-primary/10">
-              <CardHeader className="flex flex-row items-center justify-between">
-                <div>
-                  <CardTitle className="text-xl flex items-center gap-2">
-                    <Gamepad2 className="text-primary h-5 w-5" />
-                    Recent Matches
-                  </CardTitle>
-                  <CardDescription>Your latest gameplay</CardDescription>
-                </div>
-                <Button variant="outline" className="border-gray-700 hover:bg-gray-800" size="sm" asChild>
-                  <Link href="#" onClick={() => setSelectedTab("matches")}>
-                    View All
-                  </Link>
-                </Button>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  {matchHistory && matchHistory.slice(0, 3).map((match: MatchHistory) => (
-                    <div key={match.id} className="p-3 bg-gray-900/40 rounded-lg flex items-center gap-4">
-                      <div className={`h-12 w-12 rounded-full flex items-center justify-center ${
-                        match.result === "win" ? "bg-green-500/20 text-green-500" : 
-                        match.result === "loss" ? "bg-red-500/20 text-red-500" : 
-                        "bg-yellow-500/20 text-yellow-500"
-                      }`}>
-                        {match.result === "win" ? <Trophy className="h-6 w-6" /> : 
-                         match.result === "loss" ? <Flag className="h-6 w-6" /> : 
-                         <Medal className="h-6 w-6" />}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <h4 className="font-medium truncate">{match.tournamentName}</h4>
-                        <div className="flex items-center text-sm text-gray-400">
-                          <Gamepad2 className="h-3 w-3 mr-1" />
-                          <span className="truncate">{match.gameName}</span>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <div className={`font-semibold ${getResultColor(match.result)}`}>
-                          {match.result === "win" ? "Victory" : match.result === "loss" ? "Defeat" : "Draw"}
-                        </div>
-                        <div className="text-sm text-gray-400 flex items-center justify-end gap-1">
-                          <span>#{match.placement}</span>
-                          <span>•</span>
-                          <span>{match.kills} kills</span>
-                        </div>
-                      </div>
+                      <Badge variant="outline" className="flex items-center gap-1">
+                        {profile.stats.rank.points} XP
+                      </Badge>
                     </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Wallet Summary */}
-            <Card className="border border-primary/20 bg-black/60 backdrop-blur-lg shadow-lg shadow-primary/10">
-              <CardHeader>
-                <CardTitle className="text-xl flex items-center gap-2">
-                  <CreditCard className="text-primary h-5 w-5" />
-                  Wallet Summary
-                </CardTitle>
-                <CardDescription>Your earnings & transactions</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="bg-gradient-to-r from-primary/20 to-primary/10 p-4 rounded-lg mb-4">
-                  <div className="text-sm text-gray-400">Balance</div>
-                  <div className="text-3xl font-bold">₹{user.walletBalance || 0}</div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-3 mb-4">
-                  <Button variant="outline" className="border-gray-700 hover:bg-gray-800">
-                    Withdraw
-                  </Button>
-                  <Button asChild>
-                    <Link href="/add-funds">Add Funds</Link>
-                  </Button>
-                </div>
-
-                <div className="space-y-1">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-400">Tournaments Won</span>
-                    <span className="font-medium">₹{stats?.totalEarnings || 0}</span>
-                  </div>
-                  <Separator className="bg-gray-800" />
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-400">Pending Withdrawals</span>
-                    <span className="font-medium">₹0</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
-
-        {/* Achievements Tab */}
-        <TabsContent value="achievements">
-          <Card className="border border-primary/20 bg-black/60 backdrop-blur-lg shadow-lg shadow-primary/10">
-            <CardHeader>
-              <CardTitle className="text-xl flex items-center gap-2">
-                <Trophy className="text-primary h-5 w-5" />
-                Achievements
-              </CardTitle>
-              <CardDescription>
-                Track your progress and unlock unique achievements
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {achievements && achievements.map((achievement: Achievement) => (
-                  <div 
-                    key={achievement.id} 
-                    className={`p-4 border rounded-lg ${
-                      achievement.unlockedAt 
-                        ? "bg-gray-900/40 border-gray-700" 
-                        : "bg-gray-900/20 border-gray-800 opacity-70"
-                    }`}
-                  >
-                    <div className="flex items-start gap-3">
-                      <div className={`h-12 w-12 rounded-full flex items-center justify-center ${
-                        achievement.unlockedAt 
-                          ? getRarityColor(achievement.rarity) 
-                          : "bg-gray-700"
-                      }`}>
-                        {getAchievementIcon(achievement.icon)}
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                          <h3 className="font-semibold">{achievement.name}</h3>
-                          {achievement.rarity === "legendary" && (
-                            <Badge className="bg-yellow-500 hover:bg-yellow-600">Legendary</Badge>
-                          )}
-                          {achievement.rarity === "epic" && (
-                            <Badge className="bg-purple-500 hover:bg-purple-600">Epic</Badge>
-                          )}
-                        </div>
-                        <p className="text-sm text-gray-400 mb-2">{achievement.description}</p>
-                        {achievement.unlockedAt ? (
-                          <div className="flex items-center text-xs text-green-500">
-                            <CalendarClock className="h-3 w-3 mr-1" />
-                            <span>Unlocked on {new Date(achievement.unlockedAt).toLocaleDateString()}</span>
-                          </div>
-                        ) : (
-                          <div className="flex items-center text-xs text-gray-500">
-                            <Lock className="h-3 w-3 mr-1" />
-                            <span>Not unlocked yet</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Match History Tab */}
-        <TabsContent value="matches">
-          <Card className="border border-primary/20 bg-black/60 backdrop-blur-lg shadow-lg shadow-primary/10">
-            <CardHeader>
-              <CardTitle className="text-xl flex items-center gap-2">
-                <Gamepad2 className="text-primary h-5 w-5" />
-                Match History
-              </CardTitle>
-              <CardDescription>
-                Review your past performances
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {matchHistory && matchHistory.map((match: MatchHistory) => (
-                  <div key={match.id} className="bg-gray-900/40 border border-gray-800 rounded-lg overflow-hidden">
-                    <div className="flex flex-col sm:flex-row items-stretch">
-                      <div className={`w-full sm:w-2 ${
-                        match.result === "win" ? "bg-green-500" :
-                        match.result === "loss" ? "bg-red-500" :
-                        "bg-yellow-500"
-                      }`}></div>
-                      <div className="flex-1 p-4">
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-3">
-                          <div>
-                            <h3 className="font-semibold text-lg">{match.tournamentName}</h3>
-                            <div className="flex items-center text-sm text-gray-400">
-                              <Calendar className="h-3 w-3 mr-1" />
-                              <span>{new Date(match.date).toLocaleDateString()} at {new Date(match.date).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
-                            </div>
-                          </div>
-                          <div className={`px-3 py-1 rounded-full text-sm font-medium ${
-                            match.result === "win" ? "bg-green-500/20 text-green-500" :
-                            match.result === "loss" ? "bg-red-500/20 text-red-500" :
-                            "bg-yellow-500/20 text-yellow-500"
-                          }`}>
-                            {match.result === "win" ? "Victory" : match.result === "loss" ? "Defeat" : "Draw"}
-                          </div>
-                        </div>
-                        
-                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-3">
-                          <div className="bg-gray-900 rounded p-2">
-                            <div className="text-xs text-gray-400">Game</div>
-                            <div className="font-medium">{match.gameName}</div>
-                          </div>
-                          <div className="bg-gray-900 rounded p-2">
-                            <div className="text-xs text-gray-400">Team</div>
-                            <div className="font-medium">{match.teamName || "Solo"}</div>
-                          </div>
-                          <div className="bg-gray-900 rounded p-2">
-                            <div className="text-xs text-gray-400">Placement</div>
-                            <div className="font-medium">#{match.placement}</div>
-                          </div>
-                          <div className="bg-gray-900 rounded p-2">
-                            <div className="text-xs text-gray-400">Score</div>
-                            <div className="font-medium">{match.score}</div>
-                          </div>
-                        </div>
-                        
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center">
-                            <Swords className="h-4 w-4 mr-1 text-red-500" />
-                            <span className="text-sm"><strong>{match.kills}</strong> Kills</span>
-                          </div>
-                          
-                          <Button size="sm" variant="outline" className="border-gray-700 hover:bg-gray-800">
-                            <Eye className="h-4 w-4 mr-1" />
-                            Match Details
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Wallet Tab */}
-        <TabsContent value="wallet">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <Card className="col-span-2 border border-primary/20 bg-black/60 backdrop-blur-lg shadow-lg shadow-primary/10">
-              <CardHeader>
-                <CardTitle className="text-xl flex items-center gap-2">
-                  <CreditCard className="text-primary h-5 w-5" />
-                  Wallet
-                </CardTitle>
-                <CardDescription>
-                  Manage your earnings and transactions
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid md:grid-cols-3 gap-4 mb-6">
-                  <div className="col-span-2">
-                    <div className="bg-gradient-to-r from-primary to-blue-700 p-6 rounded-lg relative overflow-hidden h-48">
-                      <div className="absolute top-0 left-0 w-full h-full bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxkZWZzPjxwYXR0ZXJuIGlkPSJwYXR0ZXJuIiB4PSIwIiB5PSIwIiB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHBhdHRlcm5Vbml0cz0idXNlclNwYWNlT25Vc2UiIHBhdHRlcm5UcmFuc2Zvcm09InJvdGF0ZSgzMCkiPjxjaXJjbGUgY3g9IjIwIiBjeT0iMjAiIHI9IjEiIGZpbGw9IiNmZmZmZmYiIGZpbGwtb3BhY2l0eT0iMC4yIi8+PC9wYXR0ZXJuPjwvZGVmcz48cmVjdCB4PSIwIiB5PSIwIiB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSJ1cmwoI3BhdHRlcm4pIi8+PC9zdmc+')]"></div>
-                      <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-b from-transparent to-primary/20"></div>
-                      
-                      <div className="relative flex flex-col h-full justify-between">
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <div className="text-white/80 text-sm mb-1">Available Balance</div>
-                            <div className="text-white text-3xl font-bold">₹{user.walletBalance || 0}</div>
-                          </div>
-                          
-                          <div className="rounded-full bg-white/20 backdrop-blur-sm p-2">
-                            <Trophy className="h-6 w-6 text-white" />
-                          </div>
-                        </div>
-                        
-                        <div>
-                          <div className="text-white/80 text-sm mb-1">Player</div>
-                          <div className="text-white font-medium">{user.displayName}</div>
-                        </div>
-                      </div>
+                    <Progress value={70} className="h-2" />
+                    <div className="flex justify-between text-xs text-muted-foreground mt-1">
+                      <span>Current: {profile.stats.rank.current}</span>
+                      <span>Next: Platinum</span>
                     </div>
                   </div>
                   
-                  <div className="space-y-4">
-                    <Button className="w-full bg-primary hover:bg-primary/90" asChild>
-                      <Link href="/add-funds">Add Funds</Link>
-                    </Button>
-                    
-                    <Button variant="outline" className="w-full border-gray-700 hover:bg-gray-800">
-                      Withdraw
-                    </Button>
-                    
-                    <Button variant="outline" className="w-full border-gray-700 hover:bg-gray-800">
-                      Transaction History
-                    </Button>
-                  </div>
-                </div>
-                
-                <div className="space-y-6">
-                  <div>
-                    <h3 className="text-lg font-medium mb-3">Recent Transactions</h3>
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between p-3 bg-gray-900/40 rounded-lg">
-                        <div className="flex items-center gap-3">
-                          <div className="h-10 w-10 rounded-full flex items-center justify-center bg-green-500/20 text-green-500">
-                            <ChevronUp className="h-5 w-5" />
-                          </div>
-                          <div>
-                            <div className="font-medium">Tournament Winnings</div>
-                            <div className="text-sm text-gray-400">Weekly Showdown</div>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <div className="text-green-500 font-medium">+₹800</div>
-                          <div className="text-xs text-gray-400">Mar 22, 2024</div>
-                        </div>
-                      </div>
-                      
-                      <div className="flex items-center justify-between p-3 bg-gray-900/40 rounded-lg">
-                        <div className="flex items-center gap-3">
-                          <div className="h-10 w-10 rounded-full flex items-center justify-center bg-red-500/20 text-red-500">
-                            <ChevronDown className="h-5 w-5" />
-                          </div>
-                          <div>
-                            <div className="font-medium">Tournament Entry</div>
-                            <div className="text-sm text-gray-400">Elite Tournament</div>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <div className="text-red-500 font-medium">-₹200</div>
-                          <div className="text-xs text-gray-400">Mar 18, 2024</div>
-                        </div>
-                      </div>
-                      
-                      <div className="flex items-center justify-between p-3 bg-gray-900/40 rounded-lg">
-                        <div className="flex items-center gap-3">
-                          <div className="h-10 w-10 rounded-full flex items-center justify-center bg-green-500/20 text-green-500">
-                            <ChevronUp className="h-5 w-5" />
-                          </div>
-                          <div>
-                            <div className="font-medium">Tournament Winnings</div>
-                            <div className="text-sm text-gray-400">Pro League Qualifier</div>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <div className="text-green-500 font-medium">+₹500</div>
-                          <div className="text-xs text-gray-400">Mar 15, 2024</div>
-                        </div>
-                      </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="border rounded-md p-3">
+                      <div className="text-sm text-muted-foreground">Tournaments</div>
+                      <div className="font-bold text-xl">{profile.stats.tournaments}</div>
+                    </div>
+                    <div className="border rounded-md p-3">
+                      <div className="text-sm text-muted-foreground">Wins</div>
+                      <div className="font-bold text-xl">{profile.stats.wins}</div>
+                    </div>
+                    <div className="border rounded-md p-3">
+                      <div className="text-sm text-muted-foreground">Win Rate</div>
+                      <div className="font-bold text-xl">{profile.stats.winRate}%</div>
+                    </div>
+                    <div className="border rounded-md p-3">
+                      <div className="text-sm text-muted-foreground">Earnings</div>
+                      <div className="font-bold text-xl">${profile.stats.totalPrize}</div>
                     </div>
                   </div>
                 </div>
               </CardContent>
             </Card>
             
-            <div className="space-y-6">
-              <Card className="border border-primary/20 bg-black/60 backdrop-blur-lg shadow-lg shadow-primary/10">
-                <CardHeader>
-                  <CardTitle className="text-xl flex items-center gap-2">
-                    <Award className="text-primary h-5 w-5" />
-                    Earnings Summary
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div className="bg-gray-900/40 p-3 rounded-lg">
-                      <div className="text-sm text-gray-400">Total Earned</div>
-                      <div className="text-2xl font-bold text-green-500">₹{stats?.totalEarnings || 0}</div>
-                    </div>
-                    
-                    <div className="space-y-1">
-                      <div className="flex justify-between text-sm">
-                        <span className="text-gray-400">Tournament Winnings</span>
-                        <span className="font-medium">₹{stats?.totalEarnings || 0}</span>
-                      </div>
-                      <Separator className="bg-gray-800" />
-                      <div className="flex justify-between text-sm">
-                        <span className="text-gray-400">Referral Bonus</span>
-                        <span className="font-medium">₹0</span>
-                      </div>
-                      <Separator className="bg-gray-800" />
-                      <div className="flex justify-between text-sm">
-                        <span className="text-gray-400">Other Rewards</span>
-                        <span className="font-medium">₹0</span>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-              
-              <Card className="border border-primary/20 bg-black/60 backdrop-blur-lg shadow-lg shadow-primary/10">
-                <CardHeader>
-                  <CardTitle className="text-xl flex items-center gap-2">
-                    <MapPin className="text-primary h-5 w-5" />
-                    Payment Methods
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <Button className="w-full mb-3">Add Payment Method</Button>
-                  
-                  <div className="text-center text-sm text-gray-400">
-                    <p>No payment methods added yet</p>
-                    <p>Add a method to withdraw your earnings</p>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle>Recent Activity</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ActivityFeed activities={profile.recentActivity} />
+              </CardContent>
+            </Card>
           </div>
-        </TabsContent>
-      </Tabs>
-    </div>
+          
+          {/* Main Content */}
+          <div className="md:col-span-2 space-y-6">
+            <Tabs defaultValue="overview" className="space-y-6" onValueChange={setActiveTab}>
+              <TabsList>
+                <TabsTrigger value="overview">Overview</TabsTrigger>
+                <TabsTrigger value="tournaments">Tournaments</TabsTrigger>
+                <TabsTrigger value="teams">Teams</TabsTrigger>
+                <TabsTrigger value="achievements">Achievements</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="overview" className="space-y-6">
+                {/* Stats Cards */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <StatCard 
+                    title="Tournaments" 
+                    value={profile.stats.tournaments} 
+                    icon={<Trophy className="h-5 w-5" />}
+                    trend={{ direction: 'up', value: 15 }}
+                  />
+                  <StatCard 
+                    title="Win Rate" 
+                    value={`${profile.stats.winRate}%`} 
+                    icon={<BarChart3 className="h-5 w-5" />}
+                    trend={{ direction: 'up', value: 5 }}
+                  />
+                  <StatCard 
+                    title="Total Matches" 
+                    value={profile.stats.totalMatches} 
+                    icon={<Gamepad2 className="h-5 w-5" />}
+                  />
+                  <StatCard 
+                    title="Total Prize" 
+                    value={`$${profile.stats.totalPrize}`} 
+                    icon={<DollarSign className="h-5 w-5" />}
+                    trend={{ direction: 'up', value: 20 }}
+                  />
+                </div>
+                
+                {/* Recent Tournaments */}
+                <Card>
+                  <CardHeader className="pb-3">
+                    <div className="flex justify-between items-center">
+                      <CardTitle>Recent Tournaments</CardTitle>
+                      <Button variant="ghost" size="sm" asChild>
+                        <Link href="/tournaments">View All</Link>
+                      </Button>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-2">
+                    {profile.tournaments.slice(0, 3).map((tournament: any) => (
+                      <TournamentHistoryItem key={tournament.id} tournament={tournament} />
+                    ))}
+                  </CardContent>
+                </Card>
+                
+                {/* Teams */}
+                <Card>
+                  <CardHeader className="pb-3">
+                    <div className="flex justify-between items-center">
+                      <CardTitle>Teams</CardTitle>
+                      <Button variant="ghost" size="sm" asChild>
+                        <Link href="/teams">View All</Link>
+                      </Button>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-2">
+                    {profile.teams.map((team: any) => (
+                      <TeamCard key={team.id} team={team} />
+                    ))}
+                  </CardContent>
+                </Card>
+                
+                {/* Featured Achievements */}
+                <Card>
+                  <CardHeader className="pb-3">
+                    <div className="flex justify-between items-center">
+                      <CardTitle>Featured Achievements</CardTitle>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={() => setActiveTab("achievements")}
+                      >
+                        View All
+                      </Button>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                      {profile.achievements.slice(0, 3).map((achievement: any) => (
+                        <AchievementCard key={achievement.id} achievement={achievement} />
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+              
+              <TabsContent value="tournaments" className="space-y-6">
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="text-xl font-semibold">Tournament History</h2>
+                  <Badge variant="secondary" className="flex items-center gap-1">
+                    <Trophy className="h-3 w-3" /> {profile.stats.tournaments} Tournaments
+                  </Badge>
+                </div>
+                
+                <div className="space-y-4">
+                  {profile.tournaments.map((tournament: any) => (
+                    <TournamentHistoryItem key={tournament.id} tournament={tournament} />
+                  ))}
+                </div>
+              </TabsContent>
+              
+              <TabsContent value="teams" className="space-y-6">
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="text-xl font-semibold">Teams</h2>
+                  <Button variant="outline" size="sm" asChild>
+                    <Link href="/teams/create">
+                      <div className="flex items-center gap-1">
+                        <Users className="h-4 w-4" />
+                        Create Team
+                      </div>
+                    </Link>
+                  </Button>
+                </div>
+                
+                <div className="space-y-4">
+                  {profile.teams.map((team: any) => (
+                    <TeamCard key={team.id} team={team} />
+                  ))}
+                </div>
+              </TabsContent>
+              
+              <TabsContent value="achievements" className="space-y-6">
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="text-xl font-semibold">Achievements</h2>
+                  <Badge variant="secondary" className="flex items-center gap-1">
+                    <Medal className="h-3 w-3" /> {profile.achievements.length} Unlocked
+                  </Badge>
+                </div>
+                
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                  {profile.achievements.map((achievement: any) => (
+                    <AchievementCard key={achievement.id} achievement={achievement} />
+                  ))}
+                </div>
+              </TabsContent>
+            </Tabs>
+          </div>
+        </div>
+      </div>
+    </RootLayout>
   );
 }
 
-function Lock(props: any) {
-  return (
-    <svg
-      {...props}
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <rect width="18" height="11" x="3" y="11" rx="2" ry="2" />
-      <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-    </svg>
-  );
-}
-
-function cn(...classes: any[]) {
-  return classes.filter(Boolean).join(" ");
-}
+const Info = ({ className, ...props }: React.ComponentProps<typeof Shield>) => (
+  <Shield className={className} {...props} />
+);

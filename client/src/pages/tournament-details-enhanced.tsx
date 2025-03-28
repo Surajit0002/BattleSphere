@@ -1,1037 +1,1012 @@
-import { useState } from "react";
-import { useParams, useLocation } from "wouter";
+import React, { useState } from "react";
+import { useParams, Link as WouterLink } from "wouter";
 import { useQuery } from "@tanstack/react-query";
-import { useToast } from "@/hooks/use-toast";
-import { apiRequest } from "@/lib/queryClient";
-
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import RootLayout from "@/layouts/RootLayout";
+import { 
+  Tabs, 
+  TabsContent, 
+  TabsList, 
+  TabsTrigger 
+} from "@/components/ui/tabs";
+import { 
+  Card, 
+  CardContent, 
+  CardDescription, 
+  CardFooter, 
+  CardHeader, 
+  CardTitle 
+} from "@/components/ui/card";
+import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+} from "@/components/ui/avatar";
+import { 
+  Tooltip, 
+  TooltipContent, 
+  TooltipProvider, 
+  TooltipTrigger 
+} from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
-import { ScrollArea } from "@/components/ui/scroll-area";
-
-import { 
-  AlertCircle, 
-  Award, 
-  Calendar, 
-  CheckCircle, 
-  ChevronRight,
-  Clock, 
-  Coins, 
-  Eye, 
-  Flag, 
-  Gamepad2, 
-  Info, 
-  Link2, 
-  MapPin, 
-  MessageSquare, 
-  Share2, 
-  ShieldCheck, 
-  Swords, 
-  Trophy, 
+import { Progress } from "@/components/ui/progress";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import {
+  Trophy,
   Users,
-  XCircle,
-  Play
+  Calendar,
+  Clock,
+  Gamepad2,
+  MapPin,
+  DollarSign,
+  Share2,
+  ThumbsUp,
+  MessageSquare,
+  Eye,
+  Star,
+  ChevronRight,
+  Info,
+  AlertTriangle,
+  Check,
+  Link,
+  ExternalLink,
+  User,
+  Swords,
+  Rocket,
+  ArrowRight,
+  Timer,
+  Flame,
+  Mail,
+  CalendarDays,
+  Gift,
+  Broadcast,
+  ArrowUpRight,
+  Flag,
+  Milestone,
+  Bell,
+  BellOff,
+  Heart,
+  Copy,
+  CheckCheck,
+  Activity
 } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import EnhancedBracket from "@/components/tournament-bracket/enhanced-bracket";
 
-// Define tournament interface
-interface Tournament {
-  id: number;
-  name: string;
-  description: string;
-  gameId: number;
-  startDate: string;
-  endDate: string | null;
-  registrationEndDate: string | null;
-  entryFee: number;
-  prizePool: number;
-  maxParticipants: number;
-  minParticipants: number;
-  status: string;
-  gameMode: string;
-  tournamentType: string;
-  rules: string;
-  eligibilityCriteria: string | null;
-  isFeatured: boolean;
-}
+// Mock data for tournament details
+const mockTournamentDetails = {
+  id: 1,
+  name: "Pro League Finals 2025",
+  description: "The ultimate battle to crown the champion of BattleSphere's Pro League. Top teams from around the world compete for glory and a massive prize pool.",
+  gameId: 1,
+  gameName: "Call of Duty: Modern Warfare",
+  gameMode: "squad",
+  imageUrl: "https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=2070&auto=format&fit=crop",
+  status: "active",
+  startDate: "2025-04-15T14:00:00Z",
+  endDate: "2025-04-17T22:00:00Z",
+  registrationEndDate: "2025-04-10T23:59:59Z",
+  entryFee: 50,
+  prizePool: 25000,
+  prizeBreakdown: [
+    { place: 1, amount: 12500, label: "1st Place" },
+    { place: 2, amount: 6000, label: "2nd Place" },
+    { place: 3, amount: 3500, label: "3rd Place" },
+    { place: 4, amount: 2000, label: "4th Place" },
+    { place: "5-8", amount: 250, label: "5th-8th Place" },
+  ],
+  maxPlayers: 32,
+  currentPlayers: 24,
+  location: "Online",
+  streamUrl: "https://twitch.tv/battlesphere",
+  featured: true,
+  sponsors: [
+    { id: 1, name: "GameFuel", logo: null },
+    { id: 2, name: "TechPro", logo: null },
+    { id: 3, name: "HyperX", logo: null },
+  ],
+  rules: `### Tournament Format
+- Double elimination bracket
+- All matches are best of 3
+- Finals are best of 5
+- Maps are randomly selected from pool
 
-// Define game interface
-interface Game {
-  id: number;
-  name: string;
-  imageUrl: string;
-  description: string;
-  androidUrl: string | null;
-  iosUrl: string | null;
-  isActive: boolean;
-  isFeatured: boolean;
-}
+### Rules
+1. Players must join the tournament Discord server
+2. All matches must be streamed by at least one player
+3. Any form of cheating will result in immediate disqualification
+4. Match disputes will be handled by tournament admins
+5. Players must be ready 15 minutes before scheduled match time`,
+  discordLink: "https://discord.gg/battlesphere",
+  registrationStatus: "open", // open, closed, full
+  userRegistered: true,
+  userTeam: {
+    id: 1,
+    name: "Team Alpha",
+    logo: null,
+    members: [
+      { id: 1, username: "ProGamer", displayName: "Alex Johnson", avatar: null, role: "Captain" },
+      { id: 2, username: "NinjaPlayer", displayName: "Sarah Smith", avatar: null, role: "Member" },
+      { id: 3, username: "Destroyer", displayName: "Mike Chen", avatar: null, role: "Member" },
+      { id: 4, username: "Sniper42", displayName: "Chris Lee", avatar: null, role: "Member" },
+    ]
+  },
+  brackets: {
+    rounds: [
+      {
+        name: "Round 1",
+        matches: [
+          {
+            id: 1,
+            team1: { id: 1, name: "Team Alpha", logo: null },
+            team2: { id: 2, name: "Team Beta", logo: null },
+            winnerId: 1,
+            team1Score: 3,
+            team2Score: 1,
+            status: "completed",
+            scheduledTime: "2025-04-15T15:00:00Z",
+          },
+          {
+            id: 2,
+            team1: { id: 3, name: "Team Gamma", logo: null },
+            team2: { id: 4, name: "Team Delta", logo: null },
+            winnerId: 3,
+            team1Score: 3,
+            team2Score: 2,
+            status: "completed",
+            scheduledTime: "2025-04-15T17:00:00Z",
+          },
+          // Add more matches as needed
+        ],
+      },
+      {
+        name: "Semi-Finals",
+        matches: [
+          {
+            id: 3,
+            team1: { id: 1, name: "Team Alpha", logo: null },
+            team2: { id: 3, name: "Team Gamma", logo: null },
+            winnerId: null,
+            team1Score: 1,
+            team2Score: 1,
+            status: "live",
+            scheduledTime: "2025-04-16T15:00:00Z",
+          },
+          // Add more matches as needed
+        ],
+      },
+      {
+        name: "Finals",
+        matches: [
+          {
+            id: 4,
+            team1: null,
+            team2: null,
+            winnerId: null,
+            team1Score: 0,
+            team2Score: 0,
+            status: "upcoming",
+            scheduledTime: "2025-04-17T20:00:00Z",
+          },
+        ],
+      },
+    ],
+  },
+  participants: [
+    { id: 1, type: "team", name: "Team Alpha", logo: null, rank: 5, wins: 12, seed: 1 },
+    { id: 2, type: "team", name: "Team Beta", logo: null, rank: 8, wins: 9, seed: 2 },
+    { id: 3, type: "team", name: "Team Gamma", logo: null, rank: 3, wins: 15, seed: 3 },
+    { id: 4, type: "team", name: "Team Delta", logo: null, rank: 12, wins: 7, seed: 4 },
+    { id: 5, type: "team", name: "Team Epsilon", logo: null, rank: 15, wins: 6, seed: 5 },
+    // Add more teams as needed
+  ],
+  chatMessages: [
+    { id: 1, userId: 1, username: "ProGamer", avatar: null, message: "Good luck to everyone in the tournament!", timestamp: "2025-04-14T18:30:00Z" },
+    { id: 2, userId: 3, username: "Destroyer", avatar: null, message: "Our team has been practicing for weeks. We're ready to win this!", timestamp: "2025-04-14T19:15:00Z" },
+    { id: 3, userId: 5, username: "Admin", avatar: null, message: "Remember to check in 15 minutes before your matches start.", timestamp: "2025-04-15T08:00:00Z", isAdmin: true },
+    // Add more messages as needed
+  ],
+  stats: {
+    viewCount: 2457,
+    favoriteCount: 384,
+    shareCount: 126,
+  },
+  schedule: [
+    { 
+      date: "2025-04-15", 
+      events: [
+        { time: "14:00", title: "Opening Ceremony", description: "Tournament kickoff and player introductions" },
+        { time: "15:00", title: "Round 1 Matches", description: "First round of bracket matches" },
+        { time: "20:00", title: "Day 1 Recap", description: "Summary of day's matches and highlights" },
+      ]
+    },
+    { 
+      date: "2025-04-16", 
+      events: [
+        { time: "15:00", title: "Semi-Finals", description: "Semi-final matches" },
+        { time: "19:00", title: "Exhibition Match", description: "Special showcase match with pro players" },
+      ]
+    },
+    { 
+      date: "2025-04-17", 
+      events: [
+        { time: "18:00", title: "Pre-Final Show", description: "Analysis and predictions for the final" },
+        { time: "20:00", title: "Grand Finals", description: "Championship match for the title" },
+        { time: "22:00", title: "Awards Ceremony", description: "Prize distribution and closing remarks" },
+      ]
+    },
+  ],
+  updates: [
+    { id: 1, title: "Schedule Update", content: "Due to high demand, we've extended the registration deadline by 24 hours.", date: "2025-04-08T10:00:00Z" },
+    { id: 2, title: "Prize Pool Increase", content: "Thanks to our new sponsor TechPro, the prize pool has increased from $20,000 to $25,000!", date: "2025-04-10T14:30:00Z" },
+    { id: 3, title: "Server Maintenance", content: "The tournament platform will be unavailable on April 14th from 2-4 AM for maintenance.", date: "2025-04-12T09:15:00Z" },
+  ],
+};
 
-// Define registration interface
-interface Registration {
-  id: number;
-  tournamentId: number;
-  userId: number;
-  teamId: number | null;
-  registeredAt: string;
-  status: string;
-  userName: string;
-  userAvatar: string | null;
-  teamName: string | null;
-}
+// Convert a date to a format like "Friday, April 15, 2025"
+const formatDate = (dateString: string) => {
+  const date = new Date(dateString);
+  return date.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+};
 
-// Define match interface
-interface Match {
-  id: number;
-  tournamentId: number;
-  round: number;
-  matchNumber: number;
-  team1Id: number | null;
-  team2Id: null;
-  team1Score: number | null;
-  team2Score: number | null;
-  winnerId: number | null;
-  scheduledTime: string;
-  status: "scheduled" | "in_progress" | "completed" | "cancelled";
-  streamUrl: string | null;
-  team1Name: string | null;
-  team2Name: string | null;
-  team1Logo: string | null;
-  team2Logo: string | null;
-}
-
-// Define bracket interface
-interface Bracket {
-  id: number;
-  tournamentId: number;
-  round: number;
-  matches: Match[];
-}
-
-export default function TournamentDetailsEnhanced() {
-  const [, navigate] = useLocation();
-  const { id } = useParams();
-  const tournamentId = parseInt(id || "0");
-  const [activeTab, setActiveTab] = useState("overview");
-  const [registrationModalOpen, setRegistrationModalOpen] = useState(false);
-  const { toast } = useToast();
-
-  // Fetch tournament data
-  const { data: tournament, isLoading: isLoadingTournament } = useQuery({
-    queryKey: [`/api/tournaments/${tournamentId}`],
-    enabled: !!tournamentId,
-  });
-
-  // Fetch game data
-  const { data: game } = useQuery({
-    queryKey: [`/api/games/${tournament?.gameId}`],
-    enabled: !!tournament?.gameId,
-  });
-
-  // Fetch registrations
-  const { data: registrations } = useQuery({
-    queryKey: [`/api/tournaments/${tournamentId}/registrations`],
-    enabled: !!tournamentId,
-  });
-
-  // Fetch team data
-  const { data: userTeams } = useQuery({
-    queryKey: ["/api/teams/user"],
-  });
-
-  // Fetch matches
-  const { data: matches } = useQuery({
-    queryKey: [`/api/tournaments/${tournamentId}/matches`],
-    enabled: !!tournamentId,
-  });
-
-  // Fetch user data to check if registered
-  const { data: user } = useQuery({
-    queryKey: ["/api/user/profile"],
-  });
-
-  // Check if user is registered for this tournament
-  const isUserRegistered = registrations?.some(
-    (reg: Registration) => reg.userId === user?.id
-  );
-
-  // Register for tournament
-  const handleRegister = async (teamId: number | null = null) => {
-    if (!user) {
-      toast({
-        title: "Authentication Required",
-        description: "Please log in to register for tournaments",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    try {
-      await apiRequest(`/api/tournaments/${tournamentId}/register`, {
-        method: "POST",
-        data: {
-          teamId,
-        },
-      });
-
-      toast({
-        title: "Registration Successful",
-        description: "You have successfully registered for this tournament",
-      });
-
-      setRegistrationModalOpen(false);
-    } catch (error) {
-      toast({
-        title: "Registration Failed",
-        description: "There was an error registering for this tournament",
-        variant: "destructive",
-      });
-    }
-  };
-
-  // Format game mode for display
-  const formatGameMode = (mode: string) => {
-    if (!mode) return "";
-    return mode.charAt(0).toUpperCase() + mode.slice(1);
-  };
-
-  // Format tournament status for display
-  const getTournamentStatusBadge = (status: string) => {
-    switch (status) {
-      case "upcoming":
-        return (
-          <Badge className="bg-blue-600 hover:bg-blue-700">
-            <Calendar className="h-3 w-3 mr-1" />
-            Upcoming
-          </Badge>
-        );
-      case "ongoing":
-        return (
-          <Badge className="bg-green-600 hover:bg-green-700">
-            <Play className="h-3 w-3 mr-1" />
-            Live
-          </Badge>
-        );
-      case "completed":
-        return (
-          <Badge className="bg-purple-600 hover:bg-purple-700">
-            <CheckCircle className="h-3 w-3 mr-1" />
-            Completed
-          </Badge>
-        );
-      case "cancelled":
-        return (
-          <Badge className="bg-red-600 hover:bg-red-700">
-            <XCircle className="h-3 w-3 mr-1" />
-            Cancelled
-          </Badge>
-        );
-      default:
-        return (
-          <Badge className="bg-gray-600 hover:bg-gray-700">
-            <Info className="h-3 w-3 mr-1" />
-            {status}
-          </Badge>
-        );
-    }
-  };
-
-  // Determine if registration is open
-  const isRegistrationOpen = tournament && new Date() <= new Date(tournament.registrationEndDate || tournament.startDate);
-
-  // Calculate time remaining for registration or tournament start
-  const getTimeRemaining = () => {
-    if (!tournament) return { days: 0, hours: 0, minutes: 0, type: "" };
-
-    const now = new Date();
-    const registrationEndDate = tournament.registrationEndDate ? new Date(tournament.registrationEndDate) : null;
-    const startDate = new Date(tournament.startDate);
-
-    let targetDate;
-    let type;
-
-    if (registrationEndDate && now < registrationEndDate) {
-      targetDate = registrationEndDate;
-      type = "registration";
-    } else if (now < startDate) {
-      targetDate = startDate;
-      type = "tournament";
-    } else {
-      return { days: 0, hours: 0, minutes: 0, type: "" };
-    }
-
-    const diff = targetDate.getTime() - now.getTime();
-    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-
-    return { days, hours, minutes, type };
-  };
-
-  const timeRemaining = getTimeRemaining();
-
-  // Group matches by round
-  const getBracketData = () => {
-    if (!matches) return [];
-
-    const rounds: { [key: number]: Match[] } = {};
-    matches.forEach((match: Match) => {
-      if (!rounds[match.round]) rounds[match.round] = [];
-      rounds[match.round].push(match);
-    });
-
-    return Object.keys(rounds).map((round) => ({
-      round: parseInt(round),
-      matches: rounds[parseInt(round)],
-    }));
-  };
-
-  const bracketData = getBracketData();
-
-  if (isLoadingTournament) {
-    return (
-      <div className="container flex items-center justify-center min-h-screen">
-        <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
-      </div>
-    );
+// Calculate time until event
+const getTimeUntil = (dateString: string) => {
+  const now = new Date();
+  const eventDate = new Date(dateString);
+  const diffMs = eventDate.getTime() - now.getTime();
+  
+  if (diffMs <= 0) return "Event has started";
+  
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+  const diffHours = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+  
+  if (diffDays > 0) {
+    return `${diffDays}d ${diffHours}h until tournament`;
+  } else {
+    return `${diffHours}h until tournament`;
   }
+};
 
-  if (!tournament) {
-    return (
-      <div className="container py-10 text-center">
-        <AlertCircle className="h-16 w-16 text-yellow-500 mx-auto mb-4" />
-        <h1 className="text-2xl font-bold mb-4">Tournament Not Found</h1>
-        <p className="mb-6">The tournament you're looking for doesn't exist or has been removed</p>
-        <Button onClick={() => navigate("/tournaments")}>View All Tournaments</Button>
-      </div>
-    );
-  }
+interface TournamentInfoItemProps {
+  icon: React.ReactNode;
+  label: string;
+  value: React.ReactNode;
+}
 
+const TournamentInfoItem = ({ icon, label, value }: TournamentInfoItemProps) => {
   return (
-    <div className="container py-10 min-h-screen bg-black bg-dot-white/[0.2]">
-      {/* Tournament Hero Section */}
-      <div className="relative rounded-lg overflow-hidden mb-8">
-        <div className="h-64 bg-gradient-to-r from-purple-900 to-blue-900 relative">
-          {game && (
-            <div 
-              className="absolute inset-0 opacity-20 bg-cover bg-center" 
-              style={{ backgroundImage: `url(${game.imageUrl})` }}
-            ></div>
-          )}
-          <div className="absolute inset-0 bg-gradient-to-t from-black to-transparent"></div>
+    <div className="flex items-center gap-3">
+      <div className="bg-primary/10 p-2 rounded-md text-primary">
+        {icon}
+      </div>
+      <div>
+        <div className="text-sm text-muted-foreground">{label}</div>
+        <div className="font-medium">{value}</div>
+      </div>
+    </div>
+  );
+};
+
+interface RegistrationButtonProps {
+  tournament: any;
+}
+
+const RegistrationButton = ({ tournament }: RegistrationButtonProps) => {
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [registrationComplete, setRegistrationComplete] = useState(false);
+  
+  if (tournament.userRegistered) {
+    return (
+      <Button variant="outline" className="w-full md:w-auto gap-2">
+        <Check className="h-4 w-4" />
+        Registered
+      </Button>
+    );
+  }
+  
+  if (tournament.registrationStatus === "closed") {
+    return (
+      <Button variant="outline" className="w-full md:w-auto gap-2" disabled>
+        <AlertTriangle className="h-4 w-4" />
+        Registration Closed
+      </Button>
+    );
+  }
+  
+  if (tournament.registrationStatus === "full") {
+    return (
+      <Button variant="outline" className="w-full md:w-auto gap-2" disabled>
+        <Users className="h-4 w-4" />
+        Tournament Full
+      </Button>
+    );
+  }
+  
+  return (
+    <>
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogTrigger asChild>
+          <Button className="w-full md:w-auto gap-2">
+            <Trophy className="h-4 w-4" />
+            Register Now
+          </Button>
+        </DialogTrigger>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Register for Tournament</DialogTitle>
+            <DialogDescription>
+              {tournament.entryFee > 0 
+                ? `Entry fee: $${tournament.entryFee}. Please confirm your registration.`
+                : "This tournament is free to enter. Please confirm your registration."}
+            </DialogDescription>
+          </DialogHeader>
           
-          <div className="absolute bottom-0 left-0 right-0 p-6 z-10">
-            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
-              <div>
-                <div className="flex items-center gap-2 mb-2">
-                  {getTournamentStatusBadge(tournament.status)}
-                  {tournament.isFeatured && (
-                    <Badge className="bg-yellow-600 hover:bg-yellow-700">
-                      <Trophy className="h-3 w-3 mr-1" />
-                      Featured
-                    </Badge>
-                  )}
+          {registrationComplete ? (
+            <div className="py-6 text-center space-y-4">
+              <div className="h-12 w-12 rounded-full bg-green-100 text-green-600 flex items-center justify-center mx-auto">
+                <CheckCheck className="h-6 w-6" />
+              </div>
+              <h3 className="text-lg font-medium">Registration Complete!</h3>
+              <p className="text-muted-foreground">
+                You're all set for {tournament.name}. Good luck!
+              </p>
+            </div>
+          ) : (
+            <>
+              <div className="space-y-4 py-4">
+                <div className="space-y-2">
+                  <h3 className="font-medium">Tournament Details</h3>
+                  <div className="grid grid-cols-2 gap-3 text-sm">
+                    <div>
+                      <div className="text-muted-foreground">Start Date</div>
+                      <div>{formatDate(tournament.startDate)}</div>
+                    </div>
+                    <div>
+                      <div className="text-muted-foreground">Game</div>
+                      <div>{tournament.gameName}</div>
+                    </div>
+                    <div>
+                      <div className="text-muted-foreground">Format</div>
+                      <div>{"Double elimination, BO3"}</div>
+                    </div>
+                    <div>
+                      <div className="text-muted-foreground">Mode</div>
+                      <div>{tournament.gameMode.charAt(0).toUpperCase() + tournament.gameMode.slice(1)}</div>
+                    </div>
+                  </div>
                 </div>
-                <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">{tournament.name}</h1>
-                <div className="flex flex-wrap items-center gap-3 text-sm text-gray-300">
-                  <div className="flex items-center">
-                    <Gamepad2 className="h-4 w-4 mr-1 text-primary" />
-                    <span>{game?.name}</span>
-                  </div>
-                  <div className="flex items-center">
-                    <MapPin className="h-4 w-4 mr-1 text-red-500" />
-                    <span>{formatGameMode(tournament.gameMode)} Mode</span>
-                  </div>
-                  <div className="flex items-center">
-                    <Calendar className="h-4 w-4 mr-1 text-blue-500" />
-                    <span>{new Date(tournament.startDate).toLocaleDateString()}</span>
-                  </div>
-                  <div className="flex items-center">
-                    <Users className="h-4 w-4 mr-1 text-green-500" />
-                    <span>{registrations?.length || 0}/{tournament.maxParticipants} Participants</span>
+                
+                <div className="space-y-2">
+                  <h3 className="font-medium">Select Team</h3>
+                  <div className="border rounded-lg p-3 bg-muted/40">
+                    <div className="flex items-center gap-3">
+                      <Avatar className="h-10 w-10">
+                        <AvatarImage src={tournament.userTeam.logo} />
+                        <AvatarFallback>{tournament.userTeam.name.substring(0, 2).toUpperCase()}</AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <div className="font-medium">{tournament.userTeam.name}</div>
+                        <div className="text-xs text-muted-foreground">{tournament.userTeam.members.length} members</div>
+                      </div>
+                    </div>
                   </div>
                 </div>
+                
+                {tournament.entryFee > 0 && (
+                  <Alert>
+                    <DollarSign className="h-4 w-4" />
+                    <AlertTitle>Entry Fee: ${tournament.entryFee}</AlertTitle>
+                    <AlertDescription>
+                      This amount will be deducted from your BattleSphere wallet upon registration.
+                    </AlertDescription>
+                  </Alert>
+                )}
               </div>
               
-              <div className="flex flex-col sm:items-end gap-2">
-                <div className="flex items-center gap-1 text-sm">
-                  <Coins className="h-4 w-4 text-yellow-500" />
-                  <span className="text-gray-300">Prize Pool:</span>
-                  <span className="font-bold text-white">₹{tournament.prizePool.toLocaleString()}</span>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
+                <Button onClick={() => setRegistrationComplete(true)}>Confirm Registration</Button>
+              </DialogFooter>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+};
+
+interface ParticipantCardProps {
+  participant: any;
+  position: number;
+}
+
+const ParticipantCard = ({ participant, position }: ParticipantCardProps) => {
+  return (
+    <div className="border rounded-md p-3 flex items-center justify-between gap-4 hover:bg-muted/50 transition-colors">
+      <div className="flex items-center gap-3">
+        <div className="w-7 h-7 flex items-center justify-center font-medium text-sm text-muted-foreground">
+          #{position}
+        </div>
+        <Avatar className="h-10 w-10">
+          <AvatarImage src={participant.logo} />
+          <AvatarFallback>{participant.name.substring(0, 2).toUpperCase()}</AvatarFallback>
+        </Avatar>
+        <div>
+          <div className="font-medium">{participant.name}</div>
+          <div className="text-xs text-muted-foreground flex items-center gap-2">
+            <span className="flex items-center gap-1">
+              <Trophy className="h-3 w-3" />
+              {participant.wins} Wins
+            </span>
+            <span className="flex items-center gap-1">
+              <Milestone className="h-3 w-3" />
+              Seed #{participant.seed}
+            </span>
+          </div>
+        </div>
+      </div>
+      <div className="text-sm font-medium">
+        Rank #{participant.rank}
+      </div>
+    </div>
+  );
+};
+
+const ScheduleItem = ({ event, date }: { event: any; date: string }) => {
+  return (
+    <div className="flex gap-4 py-3">
+      <div className="w-16 shrink-0 flex flex-col items-center">
+        <div className="text-sm font-medium">{event.time}</div>
+        <div className="text-xs text-muted-foreground">{new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</div>
+      </div>
+      <div className="flex-1">
+        <div className="font-medium">{event.title}</div>
+        <div className="text-sm text-muted-foreground">{event.description}</div>
+      </div>
+    </div>
+  );
+};
+
+interface PrizePoolItemProps {
+  prize: any;
+  isLast?: boolean;
+}
+
+const PrizePoolItem = ({ prize, isLast = false }: PrizePoolItemProps) => {
+  return (
+    <div className="flex justify-between items-center py-3">
+      <div className="flex items-center gap-3">
+        {typeof prize.place === 'number' && prize.place <= 3 ? (
+          <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold 
+            ${prize.place === 1 ? 'bg-yellow-500' : prize.place === 2 ? 'bg-gray-400' : 'bg-amber-700'}`}
+          >
+            {prize.place}
+          </div>
+        ) : (
+          <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center font-medium">
+            {prize.place}
+          </div>
+        )}
+        <div>
+          <div className="font-medium">{prize.label}</div>
+        </div>
+      </div>
+      <div className="font-bold text-primary">${prize.amount.toLocaleString()}</div>
+    </div>
+  );
+};
+
+interface ChatMessageProps {
+  message: any;
+}
+
+const ChatMessage = ({ message }: ChatMessageProps) => {
+  return (
+    <div className="flex gap-3 py-2">
+      <Avatar className="h-8 w-8">
+        <AvatarImage src={message.avatar} />
+        <AvatarFallback>{message.username.substring(0, 2).toUpperCase()}</AvatarFallback>
+      </Avatar>
+      <div className="flex-1">
+        <div className="flex items-center gap-2">
+          <span className={`font-medium ${message.isAdmin ? 'text-primary' : ''}`}>
+            {message.username}
+          </span>
+          {message.isAdmin && (
+            <Badge variant="outline" className="text-xs h-5">Admin</Badge>
+          )}
+          <span className="text-xs text-muted-foreground">
+            {new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+          </span>
+        </div>
+        <div className="text-sm mt-1">{message.message}</div>
+      </div>
+    </div>
+  );
+};
+
+export default function TournamentDetailsEnhanced() {
+  const { id } = useParams();
+  const tournamentId = parseInt(id || "1");
+  const [activeTab, setActiveTab] = useState("overview");
+  const [favorite, setFavorite] = useState(false);
+  const [notificationsEnabled, setNotificationsEnabled] = useState(false);
+  const [shareTooltipOpen, setShareTooltipOpen] = useState(false);
+  
+  // In a real app, we would fetch the tournament data based on the ID
+  const { data: tournament, isLoading } = useQuery({
+    queryKey: [`/api/tournaments/${tournamentId}`],
+    initialData: mockTournamentDetails,
+    enabled: false
+  });
+  
+  const copyTournamentLink = () => {
+    navigator.clipboard.writeText(`https://battlesphere.com/tournaments/${tournamentId}`);
+    setShareTooltipOpen(true);
+    setTimeout(() => setShareTooltipOpen(false), 2000);
+  };
+  
+  if (isLoading) {
+    return (
+      <RootLayout>
+        <div className="container py-8 flex items-center justify-center min-h-[400px]">
+          <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
+        </div>
+      </RootLayout>
+    );
+  }
+  
+  if (!tournament) {
+    return (
+      <RootLayout>
+        <div className="container py-8">
+          <div className="bg-muted p-8 rounded-lg text-center">
+            <h2 className="text-2xl font-bold mb-2">Tournament Not Found</h2>
+            <p className="text-muted-foreground">The tournament you're looking for doesn't exist or has been removed.</p>
+          </div>
+        </div>
+      </RootLayout>
+    );
+  }
+  
+  const isPastStartDate = new Date(tournament.startDate) < new Date();
+  const registrationOpen = tournament.registrationStatus === "open" && !isPastStartDate;
+  
+  return (
+    <RootLayout>
+      {/* Tournament Header Banner */}
+      <div 
+        className="h-64 md:h-80 bg-cover bg-center relative" 
+        style={{ backgroundImage: `url(${tournament.imageUrl})` }}
+      >
+        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/80 to-transparent"></div>
+        <div className="container absolute inset-x-0 bottom-0 pb-6 max-w-7xl">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
+            <div>
+              <div className="flex flex-wrap items-center gap-2 mb-2">
+                {tournament.featured && (
+                  <Badge variant="default" className="font-medium">
+                    <Star className="h-3 w-3 mr-1" /> Featured
+                  </Badge>
+                )}
+                <Badge variant="outline" className="font-medium">
+                  <Gamepad2 className="h-3 w-3 mr-1" /> {tournament.gameName}
+                </Badge>
+                <Badge variant={tournament.status === "active" ? "secondary" : "outline"} className="font-medium">
+                  {tournament.status === "active" ? (
+                    <><Activity className="h-3 w-3 mr-1" /> Live Now</>
+                  ) : (
+                    <><Calendar className="h-3 w-3 mr-1" /> Upcoming</>
+                  )}
+                </Badge>
+              </div>
+              
+              <h1 className="text-3xl md:text-4xl font-bold tracking-tight">{tournament.name}</h1>
+              
+              <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2 text-muted-foreground">
+                <div className="flex items-center gap-1">
+                  <Calendar className="h-4 w-4" />
+                  <span>{formatDate(tournament.startDate)}</span>
                 </div>
-                {tournament.entryFee > 0 && (
-                  <div className="flex items-center gap-1 text-sm">
-                    <Coins className="h-4 w-4 text-yellow-500" />
-                    <span className="text-gray-300">Entry Fee:</span>
-                    <span className="font-bold text-white">₹{tournament.entryFee}</span>
-                  </div>
-                )}
+                <div className="flex items-center gap-1">
+                  <MapPin className="h-4 w-4" />
+                  <span>{tournament.location}</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <Users className="h-4 w-4" />
+                  <span>{tournament.currentPlayers}/{tournament.maxPlayers} Participants</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <DollarSign className="h-4 w-4" />
+                  <span>${tournament.prizePool.toLocaleString()} Prize Pool</span>
+                </div>
+              </div>
+            </div>
+            
+            <div className="flex flex-wrap gap-2">
+              <RegistrationButton tournament={tournament} />
+              
+              <div className="flex gap-2">
+                <TooltipProvider>
+                  <Tooltip open={shareTooltipOpen} onOpenChange={setShareTooltipOpen}>
+                    <TooltipTrigger asChild>
+                      <Button variant="outline" size="icon" onClick={copyTournamentLink}>
+                        <Share2 className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      {shareTooltipOpen ? (
+                        <p className="flex items-center gap-1">
+                          <Check className="h-3 w-3" /> Copied to clipboard
+                        </p>
+                      ) : (
+                        <p>Copy link</p>
+                      )}
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
                 
-                {isRegistrationOpen ? (
-                  <Button 
-                    className="mt-2 bg-primary hover:bg-primary/90"
-                    disabled={isUserRegistered}
-                    onClick={() => {
-                      if (tournament.gameMode === "solo") {
-                        handleRegister(null);
-                      } else {
-                        setRegistrationModalOpen(true);
-                      }
-                    }}
-                  >
-                    {isUserRegistered ? "Already Registered" : "Register Now"}
-                  </Button>
-                ) : (
-                  <Button variant="outline" className="mt-2 border-red-700 text-red-400" disabled>
-                    Registration Closed
-                  </Button>
-                )}
+                <Button 
+                  variant="outline" 
+                  size="icon"
+                  onClick={() => setFavorite(!favorite)}
+                  className={favorite ? "text-red-500" : ""}
+                >
+                  <Heart className="h-4 w-4" fill={favorite ? "currentColor" : "none"} />
+                </Button>
+                
+                <Button 
+                  variant="outline" 
+                  size="icon"
+                  onClick={() => setNotificationsEnabled(!notificationsEnabled)}
+                >
+                  {notificationsEnabled ? (
+                    <Bell className="h-4 w-4" />
+                  ) : (
+                    <BellOff className="h-4 w-4" />
+                  )}
+                </Button>
               </div>
             </div>
           </div>
         </div>
       </div>
-
-      {/* Time Remaining */}
-      {timeRemaining.type && (
-        <Card className="mb-8 border border-primary/20 bg-black/60 backdrop-blur-lg shadow-lg shadow-primary/10">
-          <CardContent className="p-4">
-            <div className="flex flex-col sm:flex-row items-center justify-between">
-              <div className="flex items-center mb-4 sm:mb-0">
-                <Clock className="h-5 w-5 text-primary mr-2" />
-                <div>
-                  <span className="font-medium">
-                    {timeRemaining.type === "registration" 
-                      ? "Registration Ends In" 
-                      : "Tournament Starts In"}
-                  </span>
-                </div>
-              </div>
-              
-              <div className="grid grid-cols-3 gap-2 sm:gap-4">
-                <div className="bg-gray-900/60 rounded-lg py-2 px-3 sm:px-6 text-center">
-                  <div className="text-2xl font-bold">{timeRemaining.days}</div>
-                  <div className="text-xs text-gray-400">Days</div>
-                </div>
-                <div className="bg-gray-900/60 rounded-lg py-2 px-3 sm:px-6 text-center">
-                  <div className="text-2xl font-bold">{timeRemaining.hours}</div>
-                  <div className="text-xs text-gray-400">Hours</div>
-                </div>
-                <div className="bg-gray-900/60 rounded-lg py-2 px-3 sm:px-6 text-center">
-                  <div className="text-2xl font-bold">{timeRemaining.minutes}</div>
-                  <div className="text-xs text-gray-400">Minutes</div>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Tab Navigation */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full mb-6">
-        <TabsList className="w-full h-14 grid grid-cols-4 bg-gray-900/60">
-          <TabsTrigger 
-            value="overview" 
-            className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-none"
-          >
-            Overview
-          </TabsTrigger>
-          <TabsTrigger 
-            value="rules" 
-            className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-none"
-          >
-            Rules
-          </TabsTrigger>
-          <TabsTrigger 
-            value="participants" 
-            className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-none"
-          >
-            Participants
-          </TabsTrigger>
-          <TabsTrigger 
-            value="brackets" 
-            className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-none"
-          >
-            Matches & Brackets
-          </TabsTrigger>
-        </TabsList>
-      </Tabs>
-
-      {/* Tab Content */}
-      <div className="space-y-6">
-        {/* Overview Tab */}
-        <TabsContent value="overview" className="mt-0">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* Tournament Info */}
-            <Card className="md:col-span-2 border border-primary/20 bg-black/60 backdrop-blur-lg shadow-lg shadow-primary/10">
-              <CardHeader>
-                <CardTitle className="text-xl flex items-center gap-2">
-                  <Info className="h-5 w-5 text-primary" />
-                  Tournament Information
-                </CardTitle>
+      
+      <div className="container py-8 max-w-7xl mx-auto">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Sidebar */}
+          <div className="lg:order-last space-y-6">
+            {/* Registration Status */}
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle>Tournament Status</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="prose prose-invert max-w-none">
-                  <p>{tournament.description}</p>
+                {!isPastStartDate ? (
+                  <Alert className="bg-primary/10 border-primary">
+                    <Clock className="h-4 w-4 text-primary" />
+                    <AlertTitle className="text-base">{getTimeUntil(tournament.startDate)}</AlertTitle>
+                    <AlertDescription>
+                      {registrationOpen 
+                        ? `Registration closes on ${new Date(tournament.registrationEndDate).toLocaleDateString()}` 
+                        : "Registration is now closed"}
+                    </AlertDescription>
+                  </Alert>
+                ) : (
+                  <Alert className="bg-secondary/10 border-secondary">
+                    <Flame className="h-4 w-4 text-secondary" />
+                    <AlertTitle className="text-base">Tournament In Progress</AlertTitle>
+                    <AlertDescription>
+                      Follow the brackets to see the latest results
+                    </AlertDescription>
+                  </Alert>
+                )}
+                
+                <div className="space-y-3">
+                  <TournamentInfoItem 
+                    icon={<Users className="h-5 w-5" />} 
+                    label="Registration" 
+                    value={`${tournament.currentPlayers}/${tournament.maxPlayers} Teams`} 
+                  />
+                  
+                  <Progress 
+                    value={(tournament.currentPlayers / tournament.maxPlayers) * 100} 
+                    className="h-2" 
+                  />
+                  
+                  <TournamentInfoItem 
+                    icon={<Calendar className="h-5 w-5" />} 
+                    label="Tournament Dates" 
+                    value={`${new Date(tournament.startDate).toLocaleDateString()} - ${new Date(tournament.endDate).toLocaleDateString()}`} 
+                  />
+                  
+                  <TournamentInfoItem 
+                    icon={<DollarSign className="h-5 w-5" />} 
+                    label="Entry Fee" 
+                    value={tournament.entryFee > 0 ? `$${tournament.entryFee}` : "Free"} 
+                  />
+                  
+                  <TournamentInfoItem 
+                    icon={<Trophy className="h-5 w-5" />} 
+                    label="Prize Pool" 
+                    value={`$${tournament.prizePool.toLocaleString()}`} 
+                  />
                 </div>
                 
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 my-6">
-                  <div className="bg-gray-900/40 rounded-lg p-3">
-                    <div className="text-xs text-gray-400 mb-1">Tournament Type</div>
-                    <div className="font-medium capitalize">{tournament.tournamentType}</div>
-                  </div>
-                  <div className="bg-gray-900/40 rounded-lg p-3">
-                    <div className="text-xs text-gray-400 mb-1">Game Mode</div>
-                    <div className="font-medium capitalize">{tournament.gameMode}</div>
-                  </div>
-                  <div className="bg-gray-900/40 rounded-lg p-3">
-                    <div className="text-xs text-gray-400 mb-1">Start Date</div>
-                    <div className="font-medium">{new Date(tournament.startDate).toLocaleDateString()}</div>
-                  </div>
-                  <div className="bg-gray-900/40 rounded-lg p-3">
-                    <div className="text-xs text-gray-400 mb-1">
-                      {tournament.endDate ? "End Date" : "Estimated End"}
-                    </div>
-                    <div className="font-medium">
-                      {tournament.endDate 
-                        ? new Date(tournament.endDate).toLocaleDateString() 
-                        : "TBD"
-                      }
-                    </div>
-                  </div>
-                </div>
+                {tournament.discordLink && (
+                  <Button variant="outline" className="w-full mt-3" asChild>
+                    <a href={tournament.discordLink} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2">
+                      <Link className="h-4 w-4" />
+                      <span>Join Discord Server</span>
+                      <ExternalLink className="h-3 w-3 ml-auto" />
+                    </a>
+                  </Button>
+                )}
                 
-                <div className="flex flex-col sm:flex-row gap-4">
-                  {/* Prize Distribution */}
-                  <div className="flex-1 bg-gray-900/20 border border-gray-800 rounded-lg p-4">
-                    <h3 className="text-lg font-medium mb-3 flex items-center gap-2">
-                      <Trophy className="h-5 w-5 text-yellow-500" />
-                      Prize Distribution
-                    </h3>
-                    <div className="space-y-2">
-                      <div className="flex justify-between items-center">
-                        <div className="flex items-center gap-2">
-                          <div className="h-6 w-6 rounded-full bg-yellow-500 flex items-center justify-center text-xs font-bold">1</div>
-                          <span>1st Place</span>
-                        </div>
-                        <div className="font-bold">₹{Math.floor(tournament.prizePool * 0.5)}</div>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <div className="flex items-center gap-2">
-                          <div className="h-6 w-6 rounded-full bg-gray-500 flex items-center justify-center text-xs font-bold">2</div>
-                          <span>2nd Place</span>
-                        </div>
-                        <div className="font-bold">₹{Math.floor(tournament.prizePool * 0.3)}</div>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <div className="flex items-center gap-2">
-                          <div className="h-6 w-6 rounded-full bg-amber-700 flex items-center justify-center text-xs font-bold">3</div>
-                          <span>3rd Place</span>
-                        </div>
-                        <div className="font-bold">₹{Math.floor(tournament.prizePool * 0.2)}</div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Game Information */}
-                  {game && (
-                    <div className="flex-1 bg-gray-900/20 border border-gray-800 rounded-lg p-4">
-                      <h3 className="text-lg font-medium mb-3 flex items-center gap-2">
-                        <Gamepad2 className="h-5 w-5 text-blue-500" />
-                        Game Information
-                      </h3>
-                      <div className="flex gap-3">
-                        <div className="h-16 w-16 rounded-lg overflow-hidden bg-gray-800 flex-shrink-0">
-                          <img 
-                            src={game.imageUrl} 
-                            alt={game.name} 
-                            className="h-full w-full object-cover"
-                          />
-                        </div>
-                        <div className="flex-1">
-                          <h4 className="font-medium">{game.name}</h4>
-                          <p className="text-sm text-gray-400 line-clamp-2 mb-2">{game.description}</p>
-                          <div className="flex gap-2">
-                            {game.androidUrl && (
-                              <Button variant="outline" size="sm" className="h-8 border-gray-700 hover:bg-gray-800" asChild>
-                                <a href={game.androidUrl} target="_blank" rel="noopener noreferrer">
-                                  <Link2 className="h-3 w-3 mr-1" />
-                                  Android
-                                </a>
-                              </Button>
-                            )}
-                            {game.iosUrl && (
-                              <Button variant="outline" size="sm" className="h-8 border-gray-700 hover:bg-gray-800" asChild>
-                                <a href={game.iosUrl} target="_blank" rel="noopener noreferrer">
-                                  <Link2 className="h-3 w-3 mr-1" />
-                                  iOS
-                                </a>
-                              </Button>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  )}
+                {tournament.status === "active" && tournament.streamUrl && (
+                  <Button className="w-full mt-1" asChild>
+                    <a href={tournament.streamUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2">
+                      <Broadcast className="h-4 w-4" />
+                      <span>Watch Live Stream</span>
+                      <ExternalLink className="h-3 w-3 ml-auto" />
+                    </a>
+                  </Button>
+                )}
+              </CardContent>
+            </Card>
+            
+            {/* Prize Distribution */}
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle>Prize Distribution</CardTitle>
+                <CardDescription>
+                  Total Prize Pool: ${tournament.prizePool.toLocaleString()}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-1">
+                  {tournament.prizeBreakdown.map((prize, index) => (
+                    <PrizePoolItem 
+                      key={index} 
+                      prize={prize} 
+                      isLast={index === tournament.prizeBreakdown.length - 1} 
+                    />
+                  ))}
                 </div>
               </CardContent>
             </Card>
-
-            {/* Registration Status & Stats */}
-            <div className="space-y-6">
-              {/* Registration Status */}
-              <Card className="border border-primary/20 bg-black/60 backdrop-blur-lg shadow-lg shadow-primary/10">
-                <CardHeader>
-                  <CardTitle className="text-xl flex items-center gap-2">
-                    <Users className="h-5 w-5 text-primary" />
-                    Registration Status
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div>
-                    <div className="flex justify-between mb-1 text-sm">
-                      <span className="text-gray-400">Participants</span>
-                      <span className="font-medium">
-                        {registrations?.length || 0}/{tournament.maxParticipants}
-                      </span>
-                    </div>
-                    <Progress 
-                      value={(registrations?.length || 0) / tournament.maxParticipants * 100} 
-                      className="h-2" 
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-400">Registration Opens</span>
-                      <span>
-                        {new Date(tournament.startDate).toLocaleDateString(undefined, { 
-                          year: 'numeric', 
-                          month: 'short', 
-                          day: 'numeric' 
-                        })}
-                      </span>
-                    </div>
-                    <Separator className="bg-gray-800" />
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-400">Registration Closes</span>
-                      <span>
-                        {tournament.registrationEndDate 
-                          ? new Date(tournament.registrationEndDate).toLocaleDateString(undefined, { 
-                              year: 'numeric', 
-                              month: 'short', 
-                              day: 'numeric' 
-                            })
-                          : "Tournament Start"
-                        }
-                      </span>
-                    </div>
-                    <Separator className="bg-gray-800" />
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-400">Min Participants</span>
-                      <span>{tournament.minParticipants}</span>
-                    </div>
-                  </div>
-                  
-                  {isRegistrationOpen ? (
-                    <Button 
-                      className="w-full mt-2 bg-primary hover:bg-primary/90"
-                      disabled={isUserRegistered}
-                      onClick={() => {
-                        if (tournament.gameMode === "solo") {
-                          handleRegister(null);
-                        } else {
-                          setRegistrationModalOpen(true);
-                        }
-                      }}
-                    >
-                      {isUserRegistered ? "Already Registered" : "Register for Tournament"}
-                    </Button>
-                  ) : (
-                    <Button variant="outline" className="w-full mt-2 border-red-700 text-red-400" disabled>
-                      Registration Closed
-                    </Button>
-                  )}
-                </CardContent>
-              </Card>
-
-              {/* Quick Stats */}
-              <Card className="border border-primary/20 bg-black/60 backdrop-blur-lg shadow-lg shadow-primary/10">
-                <CardHeader>
-                  <CardTitle className="text-xl flex items-center gap-2">
-                    <Award className="h-5 w-5 text-primary" />
-                    Tournament Stats
-                  </CardTitle>
+            
+            {/* Sponsors */}
+            {tournament.sponsors?.length > 0 && (
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle>Sponsors</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="bg-gray-900/40 rounded-lg p-3">
-                      <div className="text-xs text-gray-400 mb-1">Total Prize</div>
-                      <div className="font-medium text-lg text-yellow-500">₹{tournament.prizePool.toLocaleString()}</div>
-                    </div>
-                    <div className="bg-gray-900/40 rounded-lg p-3">
-                      <div className="text-xs text-gray-400 mb-1">Matches</div>
-                      <div className="font-medium text-lg">{matches?.length || 0}</div>
-                    </div>
-                    <div className="bg-gray-900/40 rounded-lg p-3">
-                      <div className="text-xs text-gray-400 mb-1">Teams</div>
-                      <div className="font-medium text-lg">{
-                        tournament.gameMode !== 'solo' ? registrations?.filter(
-                          (reg: Registration) => reg.teamId !== null
-                        ).length : '-'
-                      }</div>
-                    </div>
-                    <div className="bg-gray-900/40 rounded-lg p-3">
-                      <div className="text-xs text-gray-400 mb-1">Solo Players</div>
-                      <div className="font-medium text-lg">{
-                        tournament.gameMode === 'solo' ? registrations?.length || 0 : '-'
-                      }</div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Tournament Actions */}
-              <Card className="border border-primary/20 bg-black/60 backdrop-blur-lg shadow-lg shadow-primary/10">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-xl flex items-center gap-2">
-                    <Share2 className="h-5 w-5 text-primary" />
-                    Share & Follow
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    <Button className="w-full gap-2">
-                      <Eye className="h-4 w-4" />
-                      Watch Tournament Stream
-                    </Button>
-                    <Button variant="outline" className="w-full gap-2 border-gray-700 hover:bg-gray-800">
-                      <Flag className="h-4 w-4" />
-                      Follow Tournament
-                    </Button>
-                    <Button variant="outline" className="w-full gap-2 border-gray-700 hover:bg-gray-800">
-                      <Share2 className="h-4 w-4" />
-                      Share Tournament
-                    </Button>
-                    <Button variant="outline" className="w-full gap-2 border-gray-700 hover:bg-gray-800">
-                      <MessageSquare className="h-4 w-4" />
-                      Tournament Chat
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-        </TabsContent>
-
-        {/* Rules Tab */}
-        <TabsContent value="rules" className="mt-0">
-          <Card className="border border-primary/20 bg-black/60 backdrop-blur-lg shadow-lg shadow-primary/10">
-            <CardHeader>
-              <CardTitle className="text-xl flex items-center gap-2">
-                <ShieldCheck className="h-5 w-5 text-primary" />
-                Tournament Rules & Guidelines
-              </CardTitle>
-              <CardDescription>
-                Please read all rules carefully before participating
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="prose prose-invert max-w-none">
-                {tournament.rules.split('\n').map((rule, index) => (
-                  <div key={index} className="mb-4">
-                    <p>{rule}</p>
-                  </div>
-                ))}
-                
-                {tournament.eligibilityCriteria && (
-                  <>
-                    <h3 className="text-xl font-medium mt-8 mb-4">Eligibility Criteria</h3>
-                    {tournament.eligibilityCriteria.split('\n').map((criteria, index) => (
-                      <div key={index} className="mb-4">
-                        <p>{criteria}</p>
+                  <div className="flex flex-wrap gap-4 items-center justify-center">
+                    {tournament.sponsors.map((sponsor) => (
+                      <div key={sponsor.id} className="flex flex-col items-center">
+                        <div className="w-20 h-20 bg-muted rounded-md flex items-center justify-center">
+                          {sponsor.logo ? (
+                            <img src={sponsor.logo} alt={sponsor.name} className="max-w-full max-h-full p-2" />
+                          ) : (
+                            <span className="text-xl font-bold text-muted-foreground">{sponsor.name.substring(0, 2)}</span>
+                          )}
+                        </div>
+                        <div className="text-sm font-medium mt-1">{sponsor.name}</div>
                       </div>
                     ))}
-                  </>
-                )}
-                
-                <h3 className="text-xl font-medium mt-8 mb-4">General Rules</h3>
-                <ul className="list-disc pl-5 space-y-2">
-                  <li>Players must be registered with BattleSphere to participate.</li>
-                  <li>All participants must follow fair play guidelines.</li>
-                  <li>The use of hacks, cheats, or exploits is strictly prohibited and will result in immediate disqualification.</li>
-                  <li>Tournament administrators' decisions are final.</li>
-                  <li>Participants must be present and ready to play at the scheduled match times.</li>
-                  <li>A 10-minute grace period will be provided after which the team/player may be disqualified.</li>
-                  <li>Screen recording may be required for verification purposes in case of disputes.</li>
-                  <li>Tournament format and rules may be modified at the discretion of the organizers.</li>
-                </ul>
-                
-                <h3 className="text-xl font-medium mt-8 mb-4">Prize Distribution</h3>
-                <ul className="list-disc pl-5 space-y-2">
-                  <li>First Place: ₹{Math.floor(tournament.prizePool * 0.5)}</li>
-                  <li>Second Place: ₹{Math.floor(tournament.prizePool * 0.3)}</li>
-                  <li>Third Place: ₹{Math.floor(tournament.prizePool * 0.2)}</li>
-                  <li>Prize money will be credited to winners' BattleSphere wallet within 7 days of tournament completion.</li>
-                  <li>Winners may be required to complete KYC verification before receiving prizes.</li>
-                </ul>
-              </div>
-            </CardContent>
-            <CardFooter className="border-t border-gray-800 pt-4 flex justify-between">
-              <div className="flex items-center text-yellow-500 text-sm">
-                <AlertCircle className="h-4 w-4 mr-2" />
-                <span>Violation of rules may result in disqualification</span>
-              </div>
-              
-              {isRegistrationOpen && !isUserRegistered && (
-                <Button 
-                  className="bg-primary hover:bg-primary/90"
-                  onClick={() => {
-                    if (tournament.gameMode === "solo") {
-                      handleRegister(null);
-                    } else {
-                      setRegistrationModalOpen(true);
-                    }
-                  }}
-                >
-                  Accept Rules & Register
-                </Button>
-              )}
-            </CardFooter>
-          </Card>
-        </TabsContent>
-
-        {/* Participants Tab */}
-        <TabsContent value="participants" className="mt-0">
-          <Card className="border border-primary/20 bg-black/60 backdrop-blur-lg shadow-lg shadow-primary/10">
-            <CardHeader>
-              <div className="flex justify-between items-center">
-                <div>
-                  <CardTitle className="text-xl flex items-center gap-2">
-                    <Users className="h-5 w-5 text-primary" />
-                    Registered Participants
-                  </CardTitle>
-                  <CardDescription>
-                    {registrations?.length || 0} out of {tournament.maxParticipants} spots filled
-                  </CardDescription>
-                </div>
-                
-                <div>
-                  <Progress 
-                    value={(registrations?.length || 0) / tournament.maxParticipants * 100} 
-                    className="h-2 w-40" 
-                  />
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              {registrations && registrations.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {registrations.map((registration: Registration) => (
-                    <div key={registration.id} className="bg-gray-900/40 border border-gray-800 rounded-lg p-4 flex items-center gap-3">
-                      <Avatar className="h-10 w-10">
-                        <AvatarImage src={registration.userAvatar || ""} alt={registration.userName} />
-                        <AvatarFallback>{registration.userName.substring(0, 2).toUpperCase()}</AvatarFallback>
-                      </Avatar>
-                      <div className="min-w-0 flex-1">
-                        <div className="font-medium truncate">{registration.userName}</div>
-                        {registration.teamName && (
-                          <div className="text-sm text-gray-400 truncate">
-                            Team: {registration.teamName}
-                          </div>
-                        )}
-                      </div>
-                      <Badge className={`${
-                        registration.status === "accepted" ? "bg-green-600 hover:bg-green-700" :
-                        registration.status === "pending" ? "bg-yellow-600 hover:bg-yellow-700" :
-                        "bg-red-600 hover:bg-red-700"
-                      }`}>
-                        {registration.status.charAt(0).toUpperCase() + registration.status.slice(1)}
-                      </Badge>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-12">
-                  <Users className="h-12 w-12 text-gray-600 mx-auto mb-4" />
-                  <h3 className="text-xl font-medium mb-2">No Participants Yet</h3>
-                  <p className="text-gray-400 max-w-md mx-auto">
-                    Be the first to register for this tournament!
-                  </p>
-                  
-                  {isRegistrationOpen && !isUserRegistered && (
-                    <Button 
-                      className="mt-4 bg-primary hover:bg-primary/90"
-                      onClick={() => {
-                        if (tournament.gameMode === "solo") {
-                          handleRegister(null);
-                        } else {
-                          setRegistrationModalOpen(true);
-                        }
-                      }}
-                    >
-                      Register Now
-                    </Button>
-                  )}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Brackets Tab */}
-        <TabsContent value="brackets" className="mt-0">
-          <Card className="border border-primary/20 bg-black/60 backdrop-blur-lg shadow-lg shadow-primary/10">
-            <CardHeader>
-              <CardTitle className="text-xl flex items-center gap-2">
-                <Swords className="h-5 w-5 text-primary" />
-                Tournament Brackets
-              </CardTitle>
-              <CardDescription>
-                View match schedule and results
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {matches && matches.length > 0 ? (
-                <div className="space-y-6">
-                  {/* Bracket Visualization */}
-                  <div className="overflow-auto pb-6">
-                    <div className="min-w-[800px]">
-                      <div className="grid grid-cols-4 gap-4">
-                        {bracketData.map((round, index) => (
-                          <div key={index} className="space-y-4">
-                            <h3 className="text-center font-medium py-2 bg-gray-900/60 rounded-md">
-                              Round {round.round}
-                            </h3>
-                            
-                            {round.matches.map((match) => (
-                              <div key={match.id} className="bg-gray-900/40 border border-gray-800 rounded-lg p-3">
-                                <div className="text-xs text-gray-400 mb-2 flex items-center justify-between">
-                                  <span>Match #{match.matchNumber}</span>
-                                  <Badge className={`${
-                                    match.status === "completed" ? "bg-green-600 hover:bg-green-700" :
-                                    match.status === "in_progress" ? "bg-yellow-600 hover:bg-yellow-700" :
-                                    "bg-blue-600 hover:bg-blue-700"
-                                  }`}>
-                                    {match.status === "in_progress" ? "Live" :
-                                     match.status === "completed" ? "Completed" :
-                                     "Scheduled"}
-                                  </Badge>
-                                </div>
-                                
-                                <div className="space-y-2">
-                                  <div className="flex items-center justify-between">
-                                    <div className="flex items-center gap-2 min-w-0">
-                                      <Avatar className="h-6 w-6">
-                                        <AvatarImage src={match.team1Logo || ""} alt={match.team1Name} />
-                                        <AvatarFallback>{match.team1Name?.substring(0, 2).toUpperCase() || "T1"}</AvatarFallback>
-                                      </Avatar>
-                                      <span className="font-medium truncate">{match.team1Name || "TBD"}</span>
-                                    </div>
-                                    <span className="font-bold">{match.team1Score !== null ? match.team1Score : "-"}</span>
-                                  </div>
-                                  
-                                  <div className="flex items-center justify-between">
-                                    <div className="flex items-center gap-2 min-w-0">
-                                      <Avatar className="h-6 w-6">
-                                        <AvatarImage src={match.team2Logo || ""} alt={match.team2Name} />
-                                        <AvatarFallback>{match.team2Name?.substring(0, 2).toUpperCase() || "T2"}</AvatarFallback>
-                                      </Avatar>
-                                      <span className="font-medium truncate">{match.team2Name || "TBD"}</span>
-                                    </div>
-                                    <span className="font-bold">{match.team2Score !== null ? match.team2Score : "-"}</span>
-                                  </div>
-                                </div>
-                                
-                                <div className="mt-2 text-xs text-gray-400 flex items-center justify-between">
-                                  <div className="flex items-center">
-                                    <Calendar className="h-3 w-3 mr-1" />
-                                    <span>{new Date(match.scheduledTime).toLocaleDateString()}</span>
-                                  </div>
-                                  {match.status === "in_progress" && match.streamUrl && (
-                                    <Button size="sm" variant="ghost" className="h-6 px-2 text-xs text-primary">
-                                      <Eye className="h-3 w-3 mr-1" />
-                                      Watch
-                                    </Button>
-                                  )}
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
                   </div>
-                  
-                  {/* Upcoming Matches */}
-                  <div>
-                    <h3 className="text-lg font-medium mb-3">Upcoming Matches</h3>
-                    <ScrollArea className="h-[300px]">
-                      <div className="space-y-3">
-                        {matches
-                          .filter((match: Match) => match.status === "scheduled")
-                          .sort((a: Match, b: Match) => new Date(a.scheduledTime).getTime() - new Date(b.scheduledTime).getTime())
-                          .map((match: Match) => (
-                            <div key={match.id} className="bg-gray-900/40 border border-gray-800 rounded-lg p-4">
-                              <div className="flex items-center justify-between mb-2">
-                                <div className="flex items-center gap-2">
-                                  <Badge className="bg-blue-600 hover:bg-blue-700">Round {match.round}</Badge>
-                                  <span className="text-sm text-gray-400">Match #{match.matchNumber}</span>
-                                </div>
-                                <div className="flex items-center text-sm text-gray-400">
-                                  <Calendar className="h-4 w-4 mr-1" />
-                                  <span>{new Date(match.scheduledTime).toLocaleDateString()}</span>
-                                  <span className="mx-1">•</span>
-                                  <Clock className="h-4 w-4 mr-1" />
-                                  <span>{new Date(match.scheduledTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                </CardContent>
+              </Card>
+            )}
+            
+            {/* Tournament Stats */}
+            <Card>
+              <CardContent className="p-4">
+                <div className="flex justify-between">
+                  <div className="flex items-center gap-2">
+                    <Eye className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm">{tournament.stats.viewCount.toLocaleString()} views</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Heart className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm">{tournament.stats.favoriteCount.toLocaleString()} favorites</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Share2 className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm">{tournament.stats.shareCount.toLocaleString()} shares</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+          
+          {/* Main Content */}
+          <div className="lg:col-span-2 space-y-6">
+            <Tabs defaultValue="overview" className="space-y-6" onValueChange={setActiveTab}>
+              <TabsList className="grid w-full md:w-fit grid-cols-2 md:grid-cols-4">
+                <TabsTrigger value="overview">Overview</TabsTrigger>
+                <TabsTrigger value="brackets">Brackets</TabsTrigger>
+                <TabsTrigger value="participants">Participants</TabsTrigger>
+                <TabsTrigger value="schedule">Schedule</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="overview" className="space-y-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>About the Tournament</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-muted-foreground">{tournament.description}</p>
+                    
+                    {tournament.userRegistered && (
+                      <Alert className="mt-6">
+                        <CheckCheck className="h-4 w-4" />
+                        <AlertTitle>You are registered for this tournament</AlertTitle>
+                        <AlertDescription>
+                          Playing with Team: {tournament.userTeam.name}
+                        </AlertDescription>
+                      </Alert>
+                    )}
+                    
+                    {/* Tournament Updates */}
+                    {tournament.updates?.length > 0 && (
+                      <div className="mt-6 border-t pt-6">
+                        <h3 className="text-lg font-semibold mb-4">Tournament Updates</h3>
+                        <div className="space-y-4">
+                          {tournament.updates.map((update) => (
+                            <div key={update.id} className="border-l-4 border-primary pl-4 py-1">
+                              <div className="flex justify-between items-start">
+                                <h4 className="font-medium">{update.title}</h4>
+                                <div className="text-xs text-muted-foreground">
+                                  {new Date(update.date).toLocaleDateString()}
                                 </div>
                               </div>
-                              
-                              <div className="bg-gray-900/60 p-3 rounded-lg flex items-center justify-between">
-                                <div className="flex items-center gap-3">
-                                  <Avatar className="h-8 w-8">
-                                    <AvatarImage src={match.team1Logo || ""} alt={match.team1Name} />
-                                    <AvatarFallback>{match.team1Name?.substring(0, 2).toUpperCase() || "T1"}</AvatarFallback>
-                                  </Avatar>
-                                  <span className="font-medium">{match.team1Name || "TBD"}</span>
-                                </div>
-                                
-                                <div className="flex items-center">
-                                  <span className="mx-4 text-gray-400">VS</span>
-                                </div>
-                                
-                                <div className="flex items-center gap-3">
-                                  <span className="font-medium">{match.team2Name || "TBD"}</span>
-                                  <Avatar className="h-8 w-8">
-                                    <AvatarImage src={match.team2Logo || ""} alt={match.team2Name} />
-                                    <AvatarFallback>{match.team2Name?.substring(0, 2).toUpperCase() || "T2"}</AvatarFallback>
-                                  </Avatar>
-                                </div>
-                              </div>
+                              <p className="text-sm text-muted-foreground mt-1">{update.content}</p>
                             </div>
                           ))}
+                        </div>
                       </div>
-                    </ScrollArea>
-                  </div>
-                </div>
-              ) : (
-                <div className="text-center py-12">
-                  <Swords className="h-12 w-12 text-gray-600 mx-auto mb-4" />
-                  <h3 className="text-xl font-medium mb-2">Brackets Not Available</h3>
-                  <p className="text-gray-400 max-w-md mx-auto">
-                    Brackets and match schedules will be available once the tournament begins.
-                  </p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
+                    )}
+                  </CardContent>
+                </Card>
+                
+                {/* Tournament Rules */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Rules & Format</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="prose prose-sm max-w-none dark:prose-invert">
+                      <div dangerouslySetInnerHTML={{ __html: tournament.rules.replace(/\n/g, '<br>') }} />
+                    </div>
+                  </CardContent>
+                </Card>
+                
+                {/* Tournament Chat */}
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="flex items-center justify-between">
+                      <span>Tournament Chat</span>
+                      <Badge variant="outline">{tournament.chatMessages.length} messages</Badge>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2 max-h-80 overflow-y-auto pr-2">
+                      {tournament.chatMessages.map((message) => (
+                        <ChatMessage key={message.id} message={message} />
+                      ))}
+                    </div>
+                    
+                    <div className="mt-4 relative">
+                      <input 
+                        type="text" 
+                        placeholder="Type a message..." 
+                        className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background" 
+                      />
+                      <Button size="sm" className="absolute right-1 top-1">Send</Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+              
+              <TabsContent value="brackets" className="space-y-6">
+                {tournament.status === "upcoming" ? (
+                  <Card className="p-10">
+                    <div className="text-center space-y-4">
+                      <div className="bg-muted h-16 w-16 rounded-full flex items-center justify-center mx-auto">
+                        <Clock className="h-8 w-8 text-muted-foreground" />
+                      </div>
+                      <h3 className="text-lg font-medium">Brackets Not Available Yet</h3>
+                      <p className="text-muted-foreground">
+                        Brackets will be available once the tournament starts on {formatDate(tournament.startDate)}.
+                      </p>
+                    </div>
+                  </Card>
+                ) : (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Tournament Brackets</CardTitle>
+                      <CardDescription>
+                        {tournament.brackets?.rounds?.length} rounds, {tournament.currentPlayers} participants
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <EnhancedBracket 
+                        tournament={tournament}
+                        matches={tournament.brackets.matches || []}
+                        teams={tournament.participants || []}
+                      />
+                    </CardContent>
+                  </Card>
+                )}
+              </TabsContent>
+              
+              <TabsContent value="participants" className="space-y-6">
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle>Participating Teams</CardTitle>
+                    <CardDescription>
+                      {tournament.currentPlayers} of {tournament.maxPlayers} spots filled
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2">
+                      {tournament.participants
+                        .sort((a: any, b: any) => a.seed - b.seed)
+                        .map((participant: any, index: number) => (
+                          <ParticipantCard 
+                            key={participant.id} 
+                            participant={participant} 
+                            position={index + 1} 
+                          />
+                        ))
+                      }
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+              
+              <TabsContent value="schedule" className="space-y-6">
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle>Tournament Schedule</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      {tournament.schedule.map((day, index) => (
+                        <div key={index}>
+                          <h3 className="font-semibold mb-2">{formatDate(day.date)}</h3>
+                          <div className="border-l pl-4 space-y-1">
+                            {day.events.map((event, eventIndex) => (
+                              <ScheduleItem 
+                                key={eventIndex} 
+                                event={event} 
+                                date={day.date} 
+                              />
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+            </Tabs>
+          </div>
+        </div>
       </div>
-
-      {/* Team Selection Modal would be here in a real implementation */}
-    </div>
+    </RootLayout>
   );
 }
