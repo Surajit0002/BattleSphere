@@ -1,14 +1,12 @@
 
-import React from "react";
-import { motion } from "framer-motion";
-import { useQuery } from "@tanstack/react-query";
-import { Link } from "wouter";
-import { Game, Tournament, Match, LeaderboardEntry, Team } from "@shared/schema";
-import { Gamepad2, Trophy, Users, ArrowRight, Flame, Sparkles, TrendingUp, Calendar, Award } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { cn } from "@/lib/utils";
+import React from 'react';
+import { motion } from 'framer-motion';
+import { useQuery } from '@tanstack/react-query';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent } from '@/components/ui/card';
+import { Game, Tournament, Match, LeaderboardEntry, Team } from '@shared/schema';
+import { Flame, Trophy, Users, Calendar, GamepadIcon, TrendingUp, Clock, MonitorPlay } from 'lucide-react';
 
 const fadeInUp = {
   initial: { opacity: 0, y: 20 },
@@ -41,7 +39,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background/95 to-background">
-      {/* Hero Section with Parallax */}
+      {/* Hero Section */}
       <section className="relative h-[80vh] overflow-hidden">
         <motion.div 
           className="absolute inset-0 bg-gradient-radial from-primary/20 via-background to-background"
@@ -72,138 +70,125 @@ export default function Home() {
               <Button size="lg" className="bg-primary hover:bg-primary/90">
                 Join Tournament
               </Button>
-              <Button size="lg" variant="outline" className="border-primary/50 hover:bg-primary/10">
-                View Schedule
+              <Button size="lg" variant="outline">
+                Browse Games
               </Button>
             </div>
           </motion.div>
         </div>
       </section>
 
-      {/* Stats Overview */}
-      <section className="py-12 bg-black/30 backdrop-blur border-y border-primary/20">
-        <div className="container mx-auto px-4">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-            {[
-              { icon: Trophy, label: "Active Tournaments", value: "24+" },
-              { icon: Users, label: "Active Players", value: "10K+" },
-              { icon: Award, label: "Prize Pool", value: "₹500K+" },
-              { icon: TrendingUp, label: "Daily Matches", value: "100+" }
-            ].map((stat, i) => (
-              <motion.div 
-                key={i}
-                className="text-center"
-                {...fadeInUp}
-                transition={{ delay: i * 0.1 }}
-              >
-                <stat.icon className="w-8 h-8 mx-auto mb-3 text-primary" />
-                <div className="text-3xl font-bold mb-1 bg-clip-text text-transparent bg-gradient-to-r from-primary to-accent">
-                  {stat.value}
+      {/* Featured Games Section */}
+      <section className="py-16 container mx-auto px-4">
+        <div className="flex justify-between items-center mb-8">
+          <div>
+            <h2 className="text-3xl font-bold mb-2">Featured Games</h2>
+            <p className="text-muted-foreground">Popular titles with active tournaments</p>
+          </div>
+          <Button variant="outline">View All Games</Button>
+        </div>
+        
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+          {featuredGames?.map((game) => (
+            <Card key={game.id} className="group hover:border-primary transition-colors overflow-hidden">
+              <div className="aspect-video relative overflow-hidden">
+                <img 
+                  src={game.imageUrl} 
+                  alt={game.name}
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent flex items-end p-4">
+                  <div>
+                    <h3 className="text-lg font-bold text-white mb-1">{game.name}</h3>
+                    <div className="flex items-center gap-2 text-sm text-gray-300">
+                      <Users className="h-4 w-4" />
+                      <span>{Math.floor(Math.random() * 10000)} Players</span>
+                    </div>
+                  </div>
                 </div>
-                <div className="text-gray-400">{stat.label}</div>
-              </motion.div>
+              </div>
+            </Card>
+          ))}
+        </div>
+      </section>
+
+      {/* Live Streams Preview */}
+      <section className="py-16 bg-gradient-to-r from-background via-primary/5 to-background">
+        <div className="container mx-auto px-4">
+          <div className="flex justify-between items-center mb-8">
+            <div>
+              <h2 className="text-3xl font-bold mb-2">Live Now</h2>
+              <p className="text-muted-foreground">Watch top players compete live</p>
+            </div>
+            <Button>
+              <MonitorPlay className="mr-2 h-4 w-4" />
+              View All Streams
+            </Button>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[1, 2, 3].map((stream) => (
+              <Card key={stream} className="group cursor-pointer overflow-hidden">
+                <div className="aspect-video relative">
+                  <div className="absolute top-2 left-2 bg-red-500 text-white px-2 py-1 rounded-md text-sm flex items-center">
+                    <div className="w-2 h-2 rounded-full bg-white animate-pulse mr-2" />
+                    LIVE
+                  </div>
+                  <img 
+                    src={`https://picsum.photos/800/450?random=${stream}`}
+                    alt="Stream thumbnail"
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <CardContent className="p-4">
+                  <h3 className="font-bold mb-2">Pro Tournament Finals - Match {stream}</h3>
+                  <div className="flex items-center justify-between text-sm text-muted-foreground">
+                    <span>🏆 Prize Pool: $10,000</span>
+                    <span>👥 {Math.floor(Math.random() * 5000)} watching</span>
+                  </div>
+                </CardContent>
+              </Card>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Main Content */}
-      <div className="container mx-auto px-4 py-12 space-y-16">
-        {/* Featured Games */}
-        <section>
-          <div className="flex justify-between items-center mb-8">
-            <div>
-              <h2 className="text-3xl font-bold flex items-center gap-3 mb-2">
-                <Gamepad2 className="h-8 w-8 text-primary" />
-                Featured Games
-              </h2>
-              <p className="text-gray-400">Top competitive titles with active tournaments</p>
-            </div>
-            <Link href="/games">
-              <Button variant="outline" size="lg" className="gap-2">
-                Browse All <ArrowRight className="w-4 h-4" />
-              </Button>
-            </Link>
-          </div>
+      {/* Game Stats Section */}
+      <section className="py-16 container mx-auto px-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <Card className="bg-gradient-to-br from-primary/10 to-transparent border-primary/20">
+            <CardContent className="p-6">
+              <GamepadIcon className="h-8 w-8 mb-4 text-primary" />
+              <h3 className="text-2xl font-bold mb-1">1.2M+</h3>
+              <p className="text-muted-foreground">Active Players</p>
+            </CardContent>
+          </Card>
           
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-            {featuredGames?.map((game) => (
-              <motion.div
-                key={game.id}
-                className="group relative aspect-square rounded-xl overflow-hidden hover:scale-105 transition-transform duration-300"
-                {...fadeInUp}
-              >
-                <img 
-                  src={game.imageUrl} 
-                  alt={game.name}
-                  className="w-full h-full object-cover transition-transform group-hover:scale-110 duration-500"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent flex flex-col justify-end p-4">
-                  <h3 className="text-lg font-bold text-white mb-2">{game.name}</h3>
-                  <div className="flex gap-2">
-                    <Badge variant="secondary" className="bg-primary/20">Popular</Badge>
-                    <Badge variant="outline" className="border-primary/30">{game.genre}</Badge>
-                  </div>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        </section>
-
-        {/* Live Tournaments */}
-        <section className="relative">
-          <div className="absolute inset-0 bg-gradient-to-r from-primary/10 via-transparent to-primary/10 rounded-2xl" />
-          <div className="relative p-8 rounded-2xl">
-            <div className="flex justify-between items-center mb-8">
-              <div>
-                <h2 className="text-3xl font-bold flex items-center gap-3 mb-2">
-                  <Trophy className="h-8 w-8 text-primary" />
-                  Live Tournaments
-                </h2>
-                <p className="text-gray-400">Ongoing battles and upcoming challenges</p>
-              </div>
-              <Link href="/tournaments">
-                <Button variant="outline" size="lg" className="gap-2">
-                  View All <ArrowRight className="w-4 h-4" />
-                </Button>
-              </Link>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {upcomingTournaments?.slice(0, 3).map((tournament) => (
-                <Card key={tournament.id} className="bg-black/50 backdrop-blur border-primary/20 hover:border-primary/40 transition-colors">
-                  <CardHeader>
-                    <Badge className="w-fit mb-2 bg-accent-red/90">{tournament.status}</Badge>
-                    <CardTitle>{tournament.name}</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      <div className="flex justify-between items-center">
-                        <div className="flex items-center gap-2">
-                          <Calendar className="w-4 h-4 text-gray-400" />
-                          <span>{new Date(tournament.startDate).toLocaleDateString()}</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Users className="w-4 h-4 text-gray-400" />
-                          <span>{tournament.currentPlayers}/{tournament.maxPlayers}</span>
-                        </div>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <Badge variant="outline" className="border-accent-gold text-accent-gold">
-                          Prize: ₹{tournament.prizePool.toLocaleString()}
-                        </Badge>
-                        <Button size="sm" className="bg-primary hover:bg-primary/90">
-                          Join Now
-                        </Button>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </div>
-        </section>
-      </div>
+          <Card className="bg-gradient-to-br from-accent-blue/10 to-transparent border-accent-blue/20">
+            <CardContent className="p-6">
+              <Trophy className="h-8 w-8 mb-4 text-accent-blue" />
+              <h3 className="text-2xl font-bold mb-1">150+</h3>
+              <p className="text-muted-foreground">Tournaments</p>
+            </CardContent>
+          </Card>
+          
+          <Card className="bg-gradient-to-br from-accent-green/10 to-transparent border-accent-green/20">
+            <CardContent className="p-6">
+              <TrendingUp className="h-8 w-8 mb-4 text-accent-green" />
+              <h3 className="text-2xl font-bold mb-1">₹50L+</h3>
+              <p className="text-muted-foreground">Prize Pool</p>
+            </CardContent>
+          </Card>
+          
+          <Card className="bg-gradient-to-br from-accent-gold/10 to-transparent border-accent-gold/20">
+            <CardContent className="p-6">
+              <Clock className="h-8 w-8 mb-4 text-accent-gold" />
+              <h3 className="text-2xl font-bold mb-1">24/7</h3>
+              <p className="text-muted-foreground">Support</p>
+            </CardContent>
+          </Card>
+        </div>
+      </section>
     </div>
   );
 }

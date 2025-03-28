@@ -30,6 +30,32 @@
     @apply backdrop-blur-md bg-white/10 border border-white/20;
   }
 
+/* Custom animations */
+@keyframes float {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+  100% { transform: translateY(0px); }
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+/* Custom gradients */
+.bg-gradient-radial {
+  background: radial-gradient(circle at center, var(--tw-gradient-from) 0%, var(--tw-gradient-via) 50%, var(--tw-gradient-to) 100%);
+}
+
+.bg-gradient-glow {
+  background: linear-gradient(
+    45deg,
+    rgba(var(--primary-rgb), 0.1) 0%,
+    rgba(var(--primary-rgb), 0.05) 50%,
+    rgba(var(--primary-rgb), 0.1) 100%
+  );
+}
+
+
 /* Custom utilities */
 .bg-gradient-radial {
   background-image: radial-gradient(var(--tw-gradient-stops));
