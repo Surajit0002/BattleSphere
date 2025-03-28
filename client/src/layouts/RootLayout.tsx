@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
+import { ThemeSwitcher } from "@/components/theme-switcher";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { 
@@ -216,6 +217,7 @@ export default function RootLayout({ children }: RootLayoutProps) {
             </div>
             
             <div className="flex items-center gap-1 sm:gap-2">
+              <ThemeSwitcher />
               <Button variant="ghost" size="sm" className="hidden md:flex gap-2 items-center p-2" onClick={() => setSearchOpen(!searchOpen)}>
                 <Search className="h-4 w-4 text-muted-foreground" />
                 <span className="text-xs text-muted-foreground hidden lg:inline-block">Search...</span>
