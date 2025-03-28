@@ -136,47 +136,52 @@ export default function RootLayout({ children }: RootLayoutProps) {
               <DropdownMenuContent align="end" className="w-56">
                 <DropdownMenuLabel>My Account</DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <Link href="/profile">
-                  <DropdownMenuItem asChild>
-                    <a>
+                <DropdownMenuItem asChild>
+                  <Link href="/profile">
+                    <div className="flex items-center">
                       <User className="mr-2 h-4 w-4" />
                       <span>Profile</span>
-                    </a>
-                  </DropdownMenuItem>
-                </Link>
-                <Link href="/teams">
-                  <DropdownMenuItem asChild>
-                    <a>
+                    </div>
+                  </Link>
+                </DropdownMenuItem>
+
+                <DropdownMenuItem asChild>
+                  <Link href="/teams">
+                    <div className="flex items-center">
                       <Users className="mr-2 h-4 w-4" />
                       <span>My Teams</span>
-                    </a>
-                  </DropdownMenuItem>
-                </Link>
-                <Link href="/tournaments">
-                  <DropdownMenuItem asChild>
-                    <a>
+                    </div>
+                  </Link>
+                </DropdownMenuItem>
+
+                <DropdownMenuItem asChild>
+                  <Link href="/tournaments">
+                    <div className="flex items-center">
                       <Trophy className="mr-2 h-4 w-4" />
                       <span>My Tournaments</span>
-                    </a>
-                  </DropdownMenuItem>
-                </Link>
+                    </div>
+                  </Link>
+                </DropdownMenuItem>
+                
                 <DropdownMenuSeparator />
-                <Link href="/settings">
-                  <DropdownMenuItem asChild>
-                    <a>
+                
+                <DropdownMenuItem asChild>
+                  <Link href="/settings">
+                    <div className="flex items-center">
                       <Settings className="mr-2 h-4 w-4" />
                       <span>Settings</span>
-                    </a>
-                  </DropdownMenuItem>
-                </Link>
-                <Link href="/admin/dashboard">
-                  <DropdownMenuItem asChild>
-                    <a>
+                    </div>
+                  </Link>
+                </DropdownMenuItem>
+
+                <DropdownMenuItem asChild>
+                  <Link href="/admin/dashboard">
+                    <div className="flex items-center">
                       <Shield className="mr-2 h-4 w-4" />
                       <span>Admin Dashboard</span>
-                    </a>
-                  </DropdownMenuItem>
-                </Link>
+                    </div>
+                  </Link>
+                </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem>
                   <LogOut className="mr-2 h-4 w-4" />

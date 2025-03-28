@@ -29,7 +29,7 @@ const TournamentDetailsPremium = lazy(() => import("@/pages/tournament-details-p
 const TournamentsEnhanced = lazy(() => import("@/pages/tournaments-enhanced"));
 const FindTeammate = lazy(() => import("@/pages/find-teammate"));
 const JoinTeam = lazy(() => import("@/pages/join-team"));
-
+const TournamentBracketDemo = lazy(() => import("@/pages/tournament-bracket-demo"));
 
 // New Admin Pages
 const UserManagement = lazy(() => import("@/pages/admin/user-management"));
@@ -144,6 +144,14 @@ function Router() {
         {() => (
           <Suspense fallback={<PageLoader />}>
             <JoinTeam />
+          </Suspense>
+        )}
+      </Route>
+      
+      <Route path="/tournaments/bracket-demo">
+        {() => (
+          <Suspense fallback={<PageLoader />}>
+            <TournamentBracketDemo />
           </Suspense>
         )}
       </Route>
