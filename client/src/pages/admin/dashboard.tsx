@@ -1,555 +1,478 @@
-import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { Link } from "wouter";
-import AdminLayout from "@/layouts/AdminLayout";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import React from "react";
+import AdminLayout from "../../layouts/AdminLayout";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import {
-  ArrowUpRight,
-  TrendingUp,
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useQuery } from "@tanstack/react-query";
+import { 
+  BarChart3, 
+  Users, 
+  CreditCard, 
+  Trophy, 
+  TrendingUp, 
   TrendingDown,
-  Users,
-  Calendar,
-  Trophy,
   Wallet,
-  DollarSign,
-  Clock,
-  Shield,
-  AlertTriangle,
-  EyeIcon,
-  BarChart3,
-  ArrowRightCircle
+  PersonStanding,
+  UserPlus,
+  UserCheck,
+  UserX,
+  BadgeCheck,
+  ChevronRight,
+  ArrowUpRight,
+  ArrowDownRight,
+  ArrowRight,
+  BarChart
 } from "lucide-react";
-import { motion } from "framer-motion";
+import {
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  BarChart as RechartsBarChart,
+  Bar,
+  PieChart,
+  Pie,
+  Cell,
+  Legend
+} from "recharts";
+import { cn } from "@/lib/utils";
+
+// Dashboard Analytics Data
+const revenueData = [
+  { name: "Jan", value: 2400 },
+  { name: "Feb", value: 1398 },
+  { name: "Mar", value: 9800 },
+  { name: "Apr", value: 3908 },
+  { name: "May", value: 4800 },
+  { name: "Jun", value: 3800 },
+  { name: "Jul", value: 4300 },
+  { name: "Aug", value: 5300 },
+  { name: "Sep", value: 4890 },
+  { name: "Oct", value: 7800 },
+  { name: "Nov", value: 8900 },
+  { name: "Dec", value: 6800 },
+];
+
+const userActivityData = [
+  { name: "Jan", active: 4000, new: 2400 },
+  { name: "Feb", active: 3000, new: 1398 },
+  { name: "Mar", active: 2000, new: 9800 },
+  { name: "Apr", active: 2780, new: 3908 },
+  { name: "May", active: 1890, new: 4800 },
+  { name: "Jun", active: 2390, new: 3800 },
+  { name: "Jul", active: 3490, new: 4300 },
+  { name: "Aug", active: 4000, new: 2400 },
+  { name: "Sep", active: 3000, new: 1398 },
+  { name: "Oct", active: 2000, new: 9800 },
+  { name: "Nov", active: 2780, new: 3908 },
+  { name: "Dec", active: 1890, new: 4800 },
+];
+
+const pieData = [
+  { name: "Free", value: 400 },
+  { name: "Paid", value: 300 },
+  { name: "Sponsored", value: 200 },
+  { name: "Seasonal", value: 100 },
+];
+
+const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042"];
+
+const recentActivityData = [
+  {
+    id: 1,
+    type: "user",
+    action: "joined",
+    target: "ProGamer123",
+    time: "2 minutes ago",
+  },
+  {
+    id: 2,
+    type: "payment",
+    action: "made",
+    target: "$50.00 payment",
+    time: "10 minutes ago",
+  },
+  {
+    id: 3,
+    type: "tournament",
+    action: "created",
+    target: "Weekly Battle Royale",
+    time: "45 minutes ago",
+  },
+  {
+    id: 4,
+    type: "team",
+    action: "requested",
+    target: "verification for Team Alpha",
+    time: "2 hours ago",
+  },
+  {
+    id: 5,
+    type: "payment",
+    action: "requested",
+    target: "withdrawal of $200.00",
+    time: "3 hours ago",
+  },
+  {
+    id: 6,
+    type: "user",
+    action: "reported",
+    target: "inappropriate behavior",
+    time: "5 hours ago",
+  },
+];
+
+const StatCard = ({ 
+  title, 
+  value, 
+  icon, 
+  description, 
+  changeValue, 
+  changeType,
+  className,
+}: { 
+  title: string, 
+  value: string | number, 
+  icon: React.ReactNode, 
+  description?: string, 
+  changeValue?: string | number,
+  changeType?: "increase" | "decrease" | "neutral",
+  className?: string,
+}) => {
+  return (
+    <Card className={cn("overflow-hidden", className)}>
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <CardTitle className="text-sm font-medium">{title}</CardTitle>
+        <div className="h-8 w-8 rounded-lg bg-secondary flex items-center justify-center text-muted-foreground">
+          {icon}
+        </div>
+      </CardHeader>
+      <CardContent>
+        <div className="text-2xl font-bold">{value}</div>
+        {description && <p className="text-xs text-muted-foreground">{description}</p>}
+        {changeValue && (
+          <div className="flex items-center gap-1 mt-2">
+            {changeType === "increase" && (
+              <ArrowUpRight className="h-4 w-4 text-green-500" />
+            )}
+            {changeType === "decrease" && (
+              <ArrowDownRight className="h-4 w-4 text-red-500" />
+            )}
+            {changeType === "neutral" && (
+              <ArrowRight className="h-4 w-4 text-yellow-500" />
+            )}
+            <p className={cn(
+              "text-xs font-medium",
+              changeType === "increase" && "text-green-500",
+              changeType === "decrease" && "text-red-500",
+              changeType === "neutral" && "text-yellow-500"
+            )}>
+              {changeValue}
+            </p>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+};
+
+const ActivityItem = ({ item }: { item: typeof recentActivityData[number] }) => {
+  const getIcon = (type: string) => {
+    switch (type) {
+      case "user":
+        return <Users className="h-8 w-8 text-blue-500" />;
+      case "payment":
+        return <Wallet className="h-8 w-8 text-green-500" />;
+      case "tournament":
+        return <Trophy className="h-8 w-8 text-yellow-500" />;
+      case "team":
+        return <BadgeCheck className="h-8 w-8 text-indigo-500" />;
+      default:
+        return <BarChart3 className="h-8 w-8 text-gray-500" />;
+    }
+  };
+
+  return (
+    <div className="flex items-start gap-4 py-4">
+      <div className="rounded-full bg-secondary/30 p-2">
+        {getIcon(item.type)}
+      </div>
+      <div className="flex-1 space-y-1">
+        <p className="text-sm font-medium leading-none">
+          <span className="capitalize">{item.type}</span> {item.action} {item.target}
+        </p>
+        <p className="text-xs text-muted-foreground">{item.time}</p>
+      </div>
+      <Button variant="ghost" size="icon">
+        <ChevronRight className="h-4 w-4" />
+      </Button>
+    </div>
+  );
+};
 
 export default function AdminDashboard() {
-  // In a real app, this would fetch from the API
-  const { data: dashboardStats } = useQuery({
-    queryKey: ['/api/admin/dashboard-stats'],
-    // Mock data
-    initialData: {
-      totalUsers: 8765,
-      activeUsers: 3250,
-      userGrowth: 12.8,
-      totalRevenue: 1425000,
-      revenueGrowth: 8.2,
-      pendingWithdrawals: 85000,
-      pendingWithdrawalsCount: 28,
-      ongoingTournaments: 15,
-      upcomingTournaments: 8,
-      totalTransactions: 3560,
-      newUsers: 120,
-      suspiciousActivities: 8
-    }
+  const { data: dashboardStats, isLoading } = useQuery({
+    queryKey: ["adminDashboardStats"],
+    queryFn: async () => {
+      // In a real app, you would fetch this data from the server
+      return {
+        totalUsers: 3452,
+        activeUsers: 842,
+        newUsersToday: 56,
+        totalRevenue: 34928.50,
+        revenueChange: 12.8,
+        pendingWithdrawals: 8,
+        ongoingTournaments: 16,
+        totalTransactions: 2842,
+        transactionsToday: 184,
+      };
+    },
   });
-  
-  const { data: recentTransactions } = useQuery({
-    queryKey: ['/api/admin/recent-transactions'],
-    // Mock data
-    initialData: [
-      {
-        id: 1,
-        userId: 1,
-        type: 'withdrawal',
-        amount: 2500,
-        status: 'pending',
-        timestamp: new Date("2023-06-10T15:23:11"),
-        user: {
-          id: 1,
-          username: "akshay_pro",
-          displayName: "Akshay Kumar"
-        }
-      },
-      {
-        id: 2,
-        userId: 2,
-        type: 'deposit',
-        amount: 1000,
-        status: 'completed',
-        timestamp: new Date("2023-06-10T15:10:45"),
-        user: {
-          id: 2,
-          username: "riya_gaming",
-          displayName: "Riya Singh"
-        }
-      },
-      {
-        id: 3,
-        userId: 3,
-        type: 'prize',
-        amount: 3500,
-        status: 'completed',
-        timestamp: new Date("2023-06-10T14:45:22"),
-        user: {
-          id: 3,
-          username: "vikram_beast",
-          displayName: "Vikram Kohli"
-        }
-      },
-      {
-        id: 4,
-        userId: 4,
-        type: 'deposit',
-        amount: 500,
-        status: 'completed',
-        timestamp: new Date("2023-06-10T14:30:10"),
-        user: {
-          id: 4,
-          username: "priya_queen",
-          displayName: "Priya Sharma"
-        }
-      }
-    ]
-  });
-  
-  const { data: recentUsers } = useQuery({
-    queryKey: ['/api/admin/recent-users'],
-    // Mock data
-    initialData: [
-      {
-        id: 1,
-        username: "gamer_2023",
-        displayName: "Rajesh Kumar",
-        profileImage: "https://randomuser.me/api/portraits/men/64.jpg",
-        createdAt: new Date("2023-06-10T16:30:00"),
-        gamesPlayed: 0,
-        walletBalance: 0
-      },
-      {
-        id: 2,
-        username: "pro_striker",
-        displayName: "Ankit Sharma",
-        profileImage: "https://randomuser.me/api/portraits/men/65.jpg",
-        createdAt: new Date("2023-06-10T16:15:00"),
-        gamesPlayed: 2,
-        walletBalance: 200
-      },
-      {
-        id: 3,
-        username: "fire_queen",
-        displayName: "Pooja Patel",
-        profileImage: "https://randomuser.me/api/portraits/women/64.jpg",
-        createdAt: new Date("2023-06-10T15:55:00"),
-        gamesPlayed: 0,
-        walletBalance: 500
-      },
-      {
-        id: 4,
-        username: "game_master",
-        displayName: "Rahul Verma",
-        profileImage: "https://randomuser.me/api/portraits/men/66.jpg",
-        createdAt: new Date("2023-06-10T15:40:00"),
-        gamesPlayed: 3,
-        walletBalance: 350
-      }
-    ]
-  });
-  
-  const { data: activeTournaments } = useQuery({
-    queryKey: ['/api/admin/active-tournaments'],
-    // Mock data
-    initialData: [
-      {
-        id: 1,
-        name: "Free Fire Pro League",
-        participants: 82,
-        maxParticipants: 100,
-        prizePool: 25000,
-        status: "live",
-        startTime: new Date("2023-06-10T14:00:00"),
-        endTime: new Date("2023-06-10T18:00:00"),
-        gameImage: "https://i.imgur.com/JyAzM6h.png"
-      },
-      {
-        id: 2,
-        name: "PUBG Mobile Weekly Cup",
-        participants: 64,
-        maxParticipants: 64,
-        prizePool: 15000,
-        status: "live",
-        startTime: new Date("2023-06-10T15:30:00"),
-        endTime: new Date("2023-06-10T19:30:00"),
-        gameImage: "https://i.imgur.com/DwYpM3E.png"
-      },
-      {
-        id: 3,
-        name: "BGMI Masters",
-        participants: 45,
-        maxParticipants: 100,
-        prizePool: 50000,
-        status: "registration",
-        startTime: new Date("2023-06-11T12:00:00"),
-        endTime: new Date("2023-06-11T16:00:00"),
-        gameImage: "https://i.imgur.com/T0YyvNM.png"
-      }
-    ]
-  });
-  
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-IN', { 
-      style: 'currency', 
-      currency: 'INR',
-      maximumFractionDigits: 0 
-    }).format(amount);
-  };
-  
-  const formatTime = (date: Date) => {
-    return new Date(date).toLocaleTimeString('en-IN', {
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
-  
+
   return (
     <AdminLayout>
-      <div className="p-6 space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold">Admin Dashboard</h1>
-          <p className="text-gray-500">Overview of platform performance and metrics</p>
-        </div>
-        
-        {/* Summary Stats */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-gray-500">Total Users</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{dashboardStats.totalUsers.toLocaleString()}</div>
-              <div className="flex items-center mt-1 text-xs">
-                <span className="text-green-500 flex items-center mr-1">
-                  <TrendingUp className="h-3 w-3 mr-1" /> {dashboardStats.userGrowth}%
-                </span>
-                <span className="text-gray-500">from last month</span>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-gray-500">Total Revenue</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{formatCurrency(dashboardStats.totalRevenue)}</div>
-              <div className="flex items-center mt-1 text-xs">
-                <span className="text-green-500 flex items-center mr-1">
-                  <TrendingUp className="h-3 w-3 mr-1" /> {dashboardStats.revenueGrowth}%
-                </span>
-                <span className="text-gray-500">from last month</span>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-gray-500">Pending Withdrawals</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{formatCurrency(dashboardStats.pendingWithdrawals)}</div>
-              <div className="flex items-center mt-1 text-xs">
-                <span className="text-yellow-500 mr-1">
-                  {dashboardStats.pendingWithdrawalsCount} requests
-                </span>
-                <span className="text-gray-500">awaiting approval</span>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-gray-500">Active Tournaments</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{dashboardStats.ongoingTournaments}</div>
-              <div className="flex items-center mt-1 text-xs">
-                <span className="text-blue-500 mr-1">
-                  {dashboardStats.upcomingTournaments} upcoming
-                </span>
-                <span className="text-gray-500">tournaments scheduled</span>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-        
-        {/* Secondary Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Card className="bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20">
-            <CardContent className="p-4 flex items-center justify-between">
-              <div>
-                <div className="text-lg font-semibold">{dashboardStats.activeUsers.toLocaleString()}</div>
-                <div className="text-sm text-gray-500">Active Users Today</div>
-              </div>
-              <div className="h-12 w-12 rounded-full bg-primary/20 flex items-center justify-center">
-                <Users className="h-6 w-6 text-primary" />
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card className="bg-gradient-to-br from-green-500/10 to-green-500/5 border-green-500/20">
-            <CardContent className="p-4 flex items-center justify-between">
-              <div>
-                <div className="text-lg font-semibold">{dashboardStats.totalTransactions.toLocaleString()}</div>
-                <div className="text-sm text-gray-500">Total Transactions</div>
-              </div>
-              <div className="h-12 w-12 rounded-full bg-green-500/20 flex items-center justify-center">
-                <Wallet className="h-6 w-6 text-green-500" />
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card className="bg-gradient-to-br from-red-500/10 to-red-500/5 border-red-500/20">
-            <CardContent className="p-4 flex items-center justify-between">
-              <div>
-                <div className="text-lg font-semibold">{dashboardStats.suspiciousActivities}</div>
-                <div className="text-sm text-gray-500">Suspicious Activities</div>
-              </div>
-              <div className="h-12 w-12 rounded-full bg-red-500/20 flex items-center justify-center">
-                <Shield className="h-6 w-6 text-red-500" />
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-        
-        {/* Main Content */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Recent Activities */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Recent Transactions */}
-            <Card>
-              <CardHeader className="pb-2">
-                <div className="flex justify-between items-center">
-                  <CardTitle>Recent Transactions</CardTitle>
-                  <Link href="/admin/payment-management">
-                    <Button variant="ghost" size="sm" className="gap-1 text-gray-500 hover:text-gray-100">
-                      View All <ArrowRightCircle className="h-4 w-4" />
-                    </Button>
-                  </Link>
-                </div>
-                <CardDescription>Latest financial activities on the platform</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ScrollArea className="h-[280px]">
-                  <div className="space-y-4">
-                    {recentTransactions.map((transaction) => (
-                      <div 
-                        key={transaction.id} 
-                        className="flex items-center justify-between p-3 rounded-lg border border-gray-800 bg-secondary/30"
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className={`h-10 w-10 rounded-full flex items-center justify-center ${
-                            transaction.type === 'deposit' 
-                              ? 'bg-green-500/20 text-green-500' 
-                              : transaction.type === 'withdrawal' 
-                                ? 'bg-red-500/20 text-red-500' 
-                                : 'bg-amber-500/20 text-amber-500'
-                          }`}>
-                            {transaction.type === 'deposit' 
-                              ? <ArrowUpRight className="h-5 w-5" /> 
-                              : transaction.type === 'withdrawal' 
-                                ? <ArrowUpRight className="h-5 w-5 transform rotate-180" /> 
-                                : <Trophy className="h-5 w-5" />}
-                          </div>
-                          <div>
-                            <div className="font-semibold">{transaction.user.displayName}</div>
-                            <div className="text-xs text-gray-500">
-                              {transaction.type.charAt(0).toUpperCase() + transaction.type.slice(1)}
-                            </div>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <div className={`font-semibold ${
-                            transaction.type === 'deposit' || transaction.type === 'prize' 
-                              ? 'text-green-500' 
-                              : 'text-red-500'
-                          }`}>
-                            {transaction.type === 'deposit' || transaction.type === 'prize' ? '+ ' : '- '}
-                            {formatCurrency(transaction.amount)}
-                          </div>
-                          <div className="text-xs text-gray-500">
-                            {new Date(transaction.timestamp).toLocaleTimeString()}
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </ScrollArea>
-              </CardContent>
-            </Card>
-            
-            {/* Active Tournaments */}
-            <Card>
-              <CardHeader className="pb-2">
-                <div className="flex justify-between items-center">
-                  <CardTitle>Active Tournaments</CardTitle>
-                  <Link href="/admin/tournaments">
-                    <Button variant="ghost" size="sm" className="gap-1 text-gray-500 hover:text-gray-100">
-                      View All <ArrowRightCircle className="h-4 w-4" />
-                    </Button>
-                  </Link>
-                </div>
-                <CardDescription>Currently running and upcoming tournaments</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {activeTournaments.map((tournament) => (
-                    <div 
-                      key={tournament.id} 
-                      className="flex items-center justify-between p-3 rounded-lg border border-gray-800 bg-secondary/30"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="h-12 w-12 rounded-lg overflow-hidden bg-gray-800">
-                          <img 
-                            src={tournament.gameImage} 
-                            alt={tournament.name} 
-                            className="h-full w-full object-cover"
-                          />
-                        </div>
-                        <div>
-                          <div className="font-semibold">{tournament.name}</div>
-                          <div className="text-xs text-gray-500">
-                            {formatTime(tournament.startTime)} - {formatTime(tournament.endTime)}
-                          </div>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <div className="font-semibold">
-                          {tournament.participants}/{tournament.maxParticipants}
-                        </div>
-                        <div className="flex items-center justify-end gap-2 mt-1">
-                          {tournament.status === 'live' ? (
-                            <Badge className="bg-red-500">Live</Badge>
-                          ) : (
-                            <Badge className="bg-blue-500">Registration</Badge>
-                          )}
-                          <Badge variant="outline" className="border-primary text-primary">
-                            {formatCurrency(tournament.prizePool)}
-                          </Badge>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+      <div className="space-y-8">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-3xl font-bold tracking-tight">Dashboard</h2>
+            <p className="text-muted-foreground">
+              Overview of your platform's stats and activities
+            </p>
           </div>
-          
-          {/* Side Content */}
-          <div className="space-y-6">
-            {/* Recent Users */}
-            <Card>
-              <CardHeader className="pb-2">
-                <div className="flex justify-between items-center">
-                  <CardTitle>New Users</CardTitle>
-                  <Link href="/admin/user-management">
-                    <Button variant="ghost" size="sm" className="gap-1 text-gray-500 hover:text-gray-100">
-                      View All <ArrowRightCircle className="h-4 w-4" />
-                    </Button>
-                  </Link>
-                </div>
-                <CardDescription>Recently registered players</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ScrollArea className="h-[280px]">
-                  <div className="space-y-4">
-                    {recentUsers.map((user) => (
-                      <div 
-                        key={user.id} 
-                        className="flex items-center justify-between p-3 rounded-lg border border-gray-800 bg-secondary/30"
-                      >
-                        <div className="flex items-center gap-3">
-                          <Avatar>
-                            <AvatarImage src={user.profileImage || ""} alt={user.displayName} />
-                            <AvatarFallback>{user.displayName.substring(0, 2).toUpperCase()}</AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <div className="font-semibold">{user.displayName}</div>
-                            <div className="text-xs text-gray-500">@{user.username}</div>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <div className="text-xs text-gray-500">
-                            Joined {new Date(user.createdAt).toLocaleTimeString()}
-                          </div>
-                          <div className="text-xs">
-                            Games: {user.gamesPlayed} | Balance: {formatCurrency(user.walletBalance)}
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </ScrollArea>
-              </CardContent>
-            </Card>
-            
-            {/* Action Items */}
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle>Pending Actions</CardTitle>
-                <CardDescription>Items requiring your attention</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="p-3 rounded-lg border border-yellow-500/20 bg-yellow-500/10">
-                  <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 rounded-full bg-yellow-500/20 flex items-center justify-center">
-                      <DollarSign className="h-5 w-5 text-yellow-500" />
-                    </div>
-                    <div>
-                      <div className="font-semibold">Withdrawal Requests</div>
-                      <div className="text-sm">{dashboardStats.pendingWithdrawalsCount} pending approvals</div>
-                    </div>
-                  </div>
-                  <div className="mt-2">
-                    <Link href="/admin/payment-management">
-                      <Button variant="outline" size="sm" className="w-full border-yellow-500/50 text-yellow-500 hover:bg-yellow-500/20">
-                        Process Withdrawals
-                      </Button>
-                    </Link>
-                  </div>
-                </div>
-                
-                <div className="p-3 rounded-lg border border-blue-500/20 bg-blue-500/10">
-                  <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 rounded-full bg-blue-500/20 flex items-center justify-center">
-                      <Users className="h-5 w-5 text-blue-500" />
-                    </div>
-                    <div>
-                      <div className="font-semibold">KYC Verifications</div>
-                      <div className="text-sm">12 users pending verification</div>
-                    </div>
-                  </div>
-                  <div className="mt-2">
-                    <Link href="/admin/user-management">
-                      <Button variant="outline" size="sm" className="w-full border-blue-500/50 text-blue-500 hover:bg-blue-500/20">
-                        Review KYC Documents
-                      </Button>
-                    </Link>
-                  </div>
-                </div>
-                
-                <div className="p-3 rounded-lg border border-red-500/20 bg-red-500/10">
-                  <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 rounded-full bg-red-500/20 flex items-center justify-center">
-                      <AlertTriangle className="h-5 w-5 text-red-500" />
-                    </div>
-                    <div>
-                      <div className="font-semibold">Suspicious Activities</div>
-                      <div className="text-sm">{dashboardStats.suspiciousActivities} cases need investigation</div>
-                    </div>
-                  </div>
-                  <div className="mt-2">
-                    <Link href="/admin/anti-cheat">
-                      <Button variant="outline" size="sm" className="w-full border-red-500/50 text-red-500 hover:bg-red-500/20">
-                        Investigate Reports
-                      </Button>
-                    </Link>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+          <div className="flex items-center gap-2">
+            <Tabs defaultValue="daily" className="w-[300px]">
+              <TabsList>
+                <TabsTrigger value="daily">Daily</TabsTrigger>
+                <TabsTrigger value="weekly">Weekly</TabsTrigger>
+                <TabsTrigger value="monthly">Monthly</TabsTrigger>
+                <TabsTrigger value="yearly">Yearly</TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </div>
+        </div>
+
+        {isLoading ? (
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            {[...Array(4)].map((_, i) => (
+              <Card key={i} className="w-full h-24 animate-pulse overflow-hidden">
+                <div className="bg-muted h-full"></div>
+              </Card>
+            ))}
+          </div>
+        ) : (
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <StatCard
+              title="Total Users"
+              value={dashboardStats?.totalUsers || 0}
+              description={`${dashboardStats?.newUsersToday || 0} new today`}
+              icon={<Users className="h-4 w-4" />}
+              changeValue="+12% from last month"
+              changeType="increase"
+            />
+            <StatCard
+              title="Active Users"
+              value={dashboardStats?.activeUsers || 0}
+              description="Current online users"
+              icon={<UserCheck className="h-4 w-4" />}
+              changeValue="+5% from last week"
+              changeType="increase"
+            />
+            <StatCard
+              title="Total Revenue"
+              value={`$${dashboardStats?.totalRevenue.toLocaleString() || 0}`}
+              description="All time platform revenue"
+              icon={<CreditCard className="h-4 w-4" />}
+              changeValue={`${dashboardStats?.revenueChange || 0}% from last month`}
+              changeType="increase"
+            />
+            <StatCard
+              title="Pending Withdrawals"
+              value={dashboardStats?.pendingWithdrawals || 0}
+              description="Pending approval"
+              icon={<Wallet className="h-4 w-4" />}
+              changeValue="-3 since yesterday"
+              changeType="decrease"
+            />
+          </div>
+        )}
+
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
+          <Card className="lg:col-span-4 overflow-hidden">
+            <CardHeader>
+              <CardTitle>Revenue Over Time</CardTitle>
+              <CardDescription>
+                Monthly revenue trend for the past year
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="p-0">
+              <div className="h-[300px] w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart
+                    data={revenueData}
+                    margin={{
+                      top: 5,
+                      right: 30,
+                      left: 20,
+                      bottom: 5,
+                    }}
+                  >
+                    <defs>
+                      <linearGradient id="colorUv" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.8} />
+                        <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" opacity={0.15} />
+                    <XAxis dataKey="name" tick={{ fontSize: 12 }} />
+                    <YAxis tick={{ fontSize: 12 }} />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: "hsl(var(--background))",
+                        borderColor: "hsl(var(--border))",
+                        borderRadius: "var(--radius)",
+                      }}
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="value"
+                      stroke="hsl(var(--primary))"
+                      fillOpacity={1}
+                      fill="url(#colorUv)"
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="lg:col-span-3 overflow-hidden">
+            <CardHeader>
+              <CardTitle>Recent Activity</CardTitle>
+              <CardDescription>
+                Latest user actions and platform events
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="max-h-[300px] overflow-auto px-2 md:px-6">
+              <div className="space-y-0 divide-y">
+                {recentActivityData.map((activity) => (
+                  <ActivityItem key={activity.id} item={activity} />
+                ))}
+              </div>
+            </CardContent>
+            <CardFooter className="border-t p-4 flex justify-center">
+              <Button variant="ghost" className="w-full" size="sm">
+                View All Activity
+                <ChevronRight className="h-4 w-4 ml-2" />
+              </Button>
+            </CardFooter>
+          </Card>
+        </div>
+
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
+          <Card className="lg:col-span-4 overflow-hidden">
+            <CardHeader>
+              <CardTitle>User Activity</CardTitle>
+              <CardDescription>
+                New vs. active users over the past year
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="p-0">
+              <div className="h-[300px] w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <RechartsBarChart
+                    data={userActivityData}
+                    margin={{
+                      top: 5,
+                      right: 30,
+                      left: 20,
+                      bottom: 5,
+                    }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" opacity={0.15} />
+                    <XAxis dataKey="name" tick={{ fontSize: 12 }} />
+                    <YAxis tick={{ fontSize: 12 }} />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: "hsl(var(--background))",
+                        borderColor: "hsl(var(--border))",
+                        borderRadius: "var(--radius)",
+                      }}
+                    />
+                    <Legend />
+                    <Bar dataKey="active" fill="hsl(var(--primary))" name="Active Users" />
+                    <Bar dataKey="new" fill="hsl(var(--primary) / 0.5)" name="New Users" />
+                  </RechartsBarChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="lg:col-span-3 overflow-hidden">
+            <CardHeader>
+              <CardTitle>Tournament Distribution</CardTitle>
+              <CardDescription>
+                Breakdown by tournament type
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="p-0 flex justify-center">
+              <div className="h-[300px] w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={pieData}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      outerRadius={100}
+                      fill="#8884d8"
+                      dataKey="value"
+                      label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                    >
+                      {pieData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: "hsl(var(--background))",
+                        borderColor: "hsl(var(--border))",
+                        borderRadius: "var(--radius)",
+                      }}
+                    />
+                    <Legend />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+          <StatCard
+            title="Ongoing Tournaments"
+            value={dashboardStats?.ongoingTournaments || 0}
+            description="Currently active tournaments"
+            icon={<Trophy className="h-4 w-4" />}
+            className="h-full"
+          />
+          <StatCard
+            title="Total Transactions"
+            value={dashboardStats?.totalTransactions || 0}
+            description={`${dashboardStats?.transactionsToday || 0} new today`}
+            icon={<CreditCard className="h-4 w-4" />}
+            className="h-full"
+          />
+          <div className="flex flex-col gap-4">
+            <Button variant="default" className="w-full">
+              Generate Full Report
+              <BarChart className="h-4 w-4 ml-2" />
+            </Button>
+            <Button variant="outline" className="w-full">
+              Export Data
+            </Button>
           </div>
         </div>
       </div>
