@@ -1,285 +1,205 @@
 import { useState } from "react";
+import { useMutation } from "@tanstack/react-query";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useNavigate } from "wouter";
 import { insertTournamentSchema } from "@shared/schema";
-import { useToast } from "@/hooks/use-toast";
-import { apiRequest, queryClient } from "@/lib/queryClient";
-
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import AdminLayout from "@/layouts/AdminLayout";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { Separator } from "@/components/ui/separator";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { format } from "date-fns";
-import { CalendarIcon, ChevronLeftIcon, InfoIcon, TrophyIcon } from "lucide-react";
-import { cn } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
+import { format } from "date-fns";
+import { CalendarIcon, GamepadIcon, Trophy, Users, DollarSign, Calendar as CalendarIcon2, Clock } from "lucide-react";
 
-// Create a more detailed tournament creation schema
+// Extended schema with validation
 const createTournamentSchema = insertTournamentSchema.extend({
-  startDate: z.coerce.date(),
-  endDate: z.coerce.date().optional(),
-  registrationEndDate: z.coerce.date(),
-  entryFee: z.coerce.number().min(0),
-  prizePool: z.coerce.number().min(0),
-  maxParticipants: z.coerce.number().min(2),
-  minParticipants: z.coerce.number().min(2),
-  gameMode: z.enum(["solo", "duo", "squad", "custom"]),
-  tournamentType: z.enum(["free", "paid", "sponsored", "seasonal"]),
-  rules: z.string().min(10, "Tournament rules must be at least 10 characters"),
-  eligibilityCriteria: z.string().optional(),
-  isFeatured: z.boolean().default(false),
+  startDate: z.date({
+    required_error: "A start date is required",
+  }),
+  maxPlayers: z.coerce.number().min(2, "At least 2 players required").max(1000, "Maximum 1000 players allowed"),
+  prizePool: z.coerce.number().min(100, "Minimum prize pool is ₹100"),
+  entryFee: z.coerce.number().min(0, "Entry fee cannot be negative"),
 });
 
-type FormValues = z.infer<typeof createTournamentSchema>;
+// Extract the inferred type
+type CreateTournamentValues = z.infer<typeof createTournamentSchema>;
 
 export default function CreateTournament() {
-  const [selectedTab, setSelectedTab] = useState("basic");
+  const [tab, setTab] = useState("basic");
   const { toast } = useToast();
-  const navigate = useNavigate();
-
+  
   // Fetch games for the dropdown
-  const { data: games = [] } = useQuery({
-    queryKey: ["/api/games"],
+  const { data: games, isLoading: loadingGames } = useQuery({
+    queryKey: ['/api/games'],
   });
 
-  const form = useForm<FormValues>({
+  // Form setup
+  const form = useForm<CreateTournamentValues>({
     resolver: zodResolver(createTournamentSchema),
     defaultValues: {
       name: "",
       description: "",
-      gameId: 1,
-      startDate: new Date(),
-      registrationEndDate: new Date(),
-      gameMode: "solo",
-      tournamentType: "free",
-      entryFee: 0,
-      prizePool: 1000,
-      maxParticipants: 100,
-      minParticipants: 10,
-      rules: "1. Players must follow fair play guidelines\n2. Cheating will result in disqualification\n3. Tournament admins' decisions are final",
       status: "upcoming",
-      isFeatured: false,
+      prizePool: 1000,
+      entryFee: 0,
+      maxPlayers: 100,
+      imageUrl: "",
+      featured: false,
+      startDate: new Date(),
+      gameMode: "squad",
+      tournamentType: "free",
+      gameId: 1,
+      rules: "Default tournament rules apply.",
+      registrationEndDate: null,
+      endDate: null,
+      brackets: "single_elimination",
+      discordLink: "",
+      streamUrl: "",
+      sponsorId: null,
+      winnerTeamId: null,
+      winnerUserId: null,
     },
   });
 
-  const onSubmit = async (data: FormValues) => {
-    try {
-      await apiRequest("/api/admin/tournaments", {
-        method: "POST",
-        data,
+  // Mutation for creating tournament
+  const createTournamentMutation = useMutation({
+    mutationFn: (data: CreateTournamentValues) => {
+      return apiRequest('/api/tournaments', {
+        method: 'POST',
+        body: JSON.stringify(data),
       });
-
-      queryClient.invalidateQueries({ queryKey: ["/api/tournaments"] });
+    },
+    onSuccess: () => {
       toast({
-        title: "Tournament Created",
-        description: "The tournament has been successfully created",
+        title: "Tournament Created Successfully",
+        description: "The tournament has been created and is now available.",
+        variant: "default",
       });
-      navigate("/admin/dashboard");
-    } catch (error) {
+      queryClient.invalidateQueries({ queryKey: ['/api/tournaments'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/tournaments/featured'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/tournaments/upcoming'] });
+      form.reset();
+    },
+    onError: (error) => {
       toast({
-        title: "Error",
-        description: "Failed to create tournament. Please try again.",
+        title: "Failed to Create Tournament",
+        description: error.message || "There was an error creating the tournament.",
         variant: "destructive",
       });
-    }
-  };
+    },
+  });
 
-  const onNext = () => {
-    if (selectedTab === "basic") {
-      setSelectedTab("details");
-    } else if (selectedTab === "details") {
-      setSelectedTab("rules");
-    } else if (selectedTab === "rules") {
-      form.handleSubmit(onSubmit)();
-    }
-  };
-
-  const onBack = () => {
-    if (selectedTab === "details") {
-      setSelectedTab("basic");
-    } else if (selectedTab === "rules") {
-      setSelectedTab("details");
-    }
-  };
+  // Form submission handler
+  function onSubmit(data: CreateTournamentValues) {
+    createTournamentMutation.mutate(data);
+  }
 
   return (
-    <div className="container py-10 min-h-screen bg-black bg-dot-white/[0.2]">
-      <div className="mb-8 flex items-center space-x-2">
-        <TrophyIcon className="h-8 w-8 text-primary" />
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight text-primary">Create Tournament</h1>
-          <p className="text-gray-400">Create a new tournament with detailed configurations</p>
+    <AdminLayout>
+      <div className="p-6 space-y-6">
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-3xl font-bold">Create Tournament</h1>
+            <p className="text-gray-500">Set up a new tournament with all necessary details</p>
+          </div>
+          <Button 
+            onClick={form.handleSubmit(onSubmit)} 
+            disabled={createTournamentMutation.isPending}
+            size="lg"
+          >
+            {createTournamentMutation.isPending ? "Creating..." : "Create Tournament"}
+          </Button>
         </div>
-      </div>
-
-      <Card className="w-full max-w-4xl mx-auto border border-primary/20 bg-black/60 backdrop-blur-lg text-white shadow-lg shadow-primary/10">
-        <CardHeader>
-          <CardTitle className="text-center text-2xl text-primary">Tournament Creation</CardTitle>
-          <CardDescription className="text-center text-gray-400">Fill out the details below to create a new tournament</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              <Tabs value={selectedTab} onValueChange={setSelectedTab} className="w-full">
-                <TabsList className="w-full h-14 grid grid-cols-3 mb-8 bg-gray-900/60">
-                  <TabsTrigger 
-                    value="basic" 
-                    className={cn(
-                      "data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-none",
-                      "data-[state=active]:shadow-none data-[state=active]:border-b-0"
-                    )}
-                  >
-                    Basic Info
-                  </TabsTrigger>
-                  <TabsTrigger 
-                    value="details"
-                    className={cn(
-                      "data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-none",
-                      "data-[state=active]:shadow-none data-[state=active]:border-b-0"
-                    )}
-                  >
-                    Tournament Details
-                  </TabsTrigger>
-                  <TabsTrigger 
-                    value="rules"
-                    className={cn(
-                      "data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-none",
-                      "data-[state=active]:shadow-none data-[state=active]:border-b-0"
-                    )}
-                  >
-                    Rules & Settings
-                  </TabsTrigger>
-                </TabsList>
-
-                <TabsContent value="basic" className="p-4">
-                  <div className="grid grid-cols-1 gap-6">
-                    <FormField
-                      control={form.control}
-                      name="name"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Tournament Name</FormLabel>
-                          <FormControl>
-                            <Input 
-                              placeholder="Enter tournament name" 
-                              {...field} 
-                              className="bg-gray-900/60 border-gray-700"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name="description"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Description</FormLabel>
-                          <FormControl>
-                            <Textarea 
-                              placeholder="Describe the tournament" 
-                              {...field} 
-                              className="bg-gray-900/60 border-gray-700 h-24"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name="gameId"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Game</FormLabel>
-                          <Select 
-                            onValueChange={(value) => field.onChange(parseInt(value))}
-                            defaultValue={String(field.value)}
-                          >
+        
+        <Card className="border-gray-800 bg-secondary/10">
+          <CardHeader>
+            <CardTitle>Tournament Information</CardTitle>
+            <CardDescription>Configure all details for the new tournament</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Tabs value={tab} onValueChange={setTab} className="w-full">
+              <TabsList className="grid grid-cols-3 mb-8">
+                <TabsTrigger value="basic">Basic Details</TabsTrigger>
+                <TabsTrigger value="config">Configuration</TabsTrigger>
+                <TabsTrigger value="media">Media & Extras</TabsTrigger>
+              </TabsList>
+              
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                  <TabsContent value="basic" className="space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <FormField
+                        control={form.control}
+                        name="name"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Tournament Name</FormLabel>
                             <FormControl>
-                              <SelectTrigger className="bg-gray-900/60 border-gray-700">
-                                <SelectValue placeholder="Select a game" />
-                              </SelectTrigger>
+                              <Input placeholder="Enter tournament name" {...field} />
                             </FormControl>
-                            <SelectContent className="bg-gray-900 border-gray-700">
-                              {games.map((game: any) => (
-                                <SelectItem key={game.id} value={String(game.id)}>
-                                  {game.name}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <div className="grid grid-cols-2 gap-4">
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
                       <FormField
                         control={form.control}
-                        name="gameMode"
+                        name="gameId"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Game Mode</FormLabel>
-                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormLabel>Game</FormLabel>
+                            <Select 
+                              onValueChange={(value) => field.onChange(parseInt(value))}
+                              defaultValue={field.value?.toString()}
+                            >
                               <FormControl>
-                                <SelectTrigger className="bg-gray-900/60 border-gray-700">
-                                  <SelectValue placeholder="Select mode" />
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select a game" />
                                 </SelectTrigger>
                               </FormControl>
-                              <SelectContent className="bg-gray-900 border-gray-700">
-                                <SelectItem value="solo">Solo</SelectItem>
-                                <SelectItem value="duo">Duo</SelectItem>
-                                <SelectItem value="squad">Squad</SelectItem>
-                                <SelectItem value="custom">Custom</SelectItem>
+                              <SelectContent>
+                                {games?.map((game) => (
+                                  <SelectItem key={game.id} value={game.id.toString()}>
+                                    {game.name}
+                                  </SelectItem>
+                                ))}
                               </SelectContent>
                             </Select>
                             <FormMessage />
                           </FormItem>
                         )}
                       />
-
+                      
                       <FormField
                         control={form.control}
-                        name="tournamentType"
+                        name="description"
                         render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Tournament Type</FormLabel>
-                            <Select onValueChange={field.onChange} defaultValue={field.value}>
-                              <FormControl>
-                                <SelectTrigger className="bg-gray-900/60 border-gray-700">
-                                  <SelectValue placeholder="Select type" />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent className="bg-gray-900 border-gray-700">
-                                <SelectItem value="free">Free</SelectItem>
-                                <SelectItem value="paid">Paid</SelectItem>
-                                <SelectItem value="sponsored">Sponsored</SelectItem>
-                                <SelectItem value="seasonal">Seasonal</SelectItem>
-                              </SelectContent>
-                            </Select>
+                          <FormItem className="col-span-2">
+                            <FormLabel>Description</FormLabel>
+                            <FormControl>
+                              <Textarea 
+                                placeholder="Provide tournament details and description" 
+                                className="min-h-32" 
+                                {...field} 
+                              />
+                            </FormControl>
                             <FormMessage />
                           </FormItem>
                         )}
                       />
-                    </div>
-                  </div>
-                </TabsContent>
-
-                <TabsContent value="details" className="p-4">
-                  <div className="grid grid-cols-1 gap-6">
-                    <div className="grid grid-cols-2 gap-4">
+                      
                       <FormField
                         control={form.control}
                         name="startDate"
@@ -292,7 +212,7 @@ export default function CreateTournament() {
                                   <Button
                                     variant={"outline"}
                                     className={cn(
-                                      "pl-3 text-left font-normal bg-gray-900/60 border-gray-700",
+                                      "pl-3 text-left font-normal",
                                       !field.value && "text-muted-foreground"
                                     )}
                                   >
@@ -305,14 +225,12 @@ export default function CreateTournament() {
                                   </Button>
                                 </FormControl>
                               </PopoverTrigger>
-                              <PopoverContent className="w-auto p-0 bg-gray-900 border-gray-700" align="start">
+                              <PopoverContent className="w-auto p-0" align="start">
                                 <Calendar
                                   mode="single"
                                   selected={field.value}
                                   onSelect={field.onChange}
-                                  disabled={(date) =>
-                                    date < new Date(new Date().setHours(0, 0, 0, 0))
-                                  }
+                                  disabled={(date) => date < new Date()}
                                   initialFocus
                                 />
                               </PopoverContent>
@@ -321,71 +239,113 @@ export default function CreateTournament() {
                           </FormItem>
                         )}
                       />
-
+                      
                       <FormField
                         control={form.control}
-                        name="registrationEndDate"
+                        name="status"
                         render={({ field }) => (
-                          <FormItem className="flex flex-col">
-                            <FormLabel>Registration End Date</FormLabel>
-                            <Popover>
-                              <PopoverTrigger asChild>
-                                <FormControl>
-                                  <Button
-                                    variant={"outline"}
-                                    className={cn(
-                                      "pl-3 text-left font-normal bg-gray-900/60 border-gray-700",
-                                      !field.value && "text-muted-foreground"
-                                    )}
-                                  >
-                                    {field.value ? (
-                                      format(field.value, "PPP")
-                                    ) : (
-                                      <span>Pick a date</span>
-                                    )}
-                                    <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                                  </Button>
-                                </FormControl>
-                              </PopoverTrigger>
-                              <PopoverContent className="w-auto p-0 bg-gray-900 border-gray-700" align="start">
-                                <Calendar
-                                  mode="single"
-                                  selected={field.value}
-                                  onSelect={field.onChange}
-                                  disabled={(date) =>
-                                    date > form.getValues("startDate") ||
-                                    date < new Date(new Date().setHours(0, 0, 0, 0))
-                                  }
-                                  initialFocus
-                                />
-                              </PopoverContent>
-                            </Popover>
+                          <FormItem>
+                            <FormLabel>Status</FormLabel>
+                            <Select 
+                              onValueChange={field.onChange}
+                              defaultValue={field.value}
+                            >
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select status" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                <SelectItem value="upcoming">Upcoming</SelectItem>
+                                <SelectItem value="registration">Registration Open</SelectItem>
+                                <SelectItem value="in_progress">In Progress</SelectItem>
+                                <SelectItem value="completed">Completed</SelectItem>
+                                <SelectItem value="cancelled">Cancelled</SelectItem>
+                              </SelectContent>
+                            </Select>
                             <FormMessage />
                           </FormItem>
                         )}
                       />
                     </div>
-
-                    <div className="grid grid-cols-2 gap-4">
+                  </TabsContent>
+                  
+                  <TabsContent value="config" className="space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <FormField
                         control={form.control}
-                        name="entryFee"
+                        name="tournamentType"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Entry Fee (₹)</FormLabel>
-                            <FormControl>
-                              <Input 
-                                type="number" 
-                                placeholder="0" 
-                                {...field} 
-                                className="bg-gray-900/60 border-gray-700"
-                              />
-                            </FormControl>
+                            <FormLabel>Tournament Type</FormLabel>
+                            <Select 
+                              onValueChange={field.onChange}
+                              defaultValue={field.value}
+                            >
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select tournament type" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                <SelectItem value="free">Free</SelectItem>
+                                <SelectItem value="paid">Paid</SelectItem>
+                                <SelectItem value="sponsored">Sponsored</SelectItem>
+                                <SelectItem value="seasonal">Seasonal</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <FormDescription>
+                              This determines access and prize distribution.
+                            </FormDescription>
                             <FormMessage />
                           </FormItem>
                         )}
                       />
-
+                      
+                      <FormField
+                        control={form.control}
+                        name="gameMode"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Game Mode</FormLabel>
+                            <Select 
+                              onValueChange={field.onChange}
+                              defaultValue={field.value}
+                            >
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select game mode" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                <SelectItem value="solo">Solo</SelectItem>
+                                <SelectItem value="duo">Duo</SelectItem>
+                                <SelectItem value="squad">Squad</SelectItem>
+                                <SelectItem value="custom">Custom</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={form.control}
+                        name="maxPlayers"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Maximum Players</FormLabel>
+                            <FormControl>
+                              <Input type="number" min={2} {...field} />
+                            </FormControl>
+                            <FormDescription>
+                              Maximum number of participants.
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
                       <FormField
                         control={form.control}
                         name="prizePool"
@@ -393,154 +353,179 @@ export default function CreateTournament() {
                           <FormItem>
                             <FormLabel>Prize Pool (₹)</FormLabel>
                             <FormControl>
-                              <Input 
-                                type="number" 
-                                placeholder="1000" 
-                                {...field} 
-                                className="bg-gray-900/60 border-gray-700"
-                              />
+                              <Input type="number" min={0} {...field} />
                             </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                      <FormField
-                        control={form.control}
-                        name="minParticipants"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Min Participants</FormLabel>
-                            <FormControl>
-                              <Input 
-                                type="number" 
-                                placeholder="10" 
-                                {...field} 
-                                className="bg-gray-900/60 border-gray-700"
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <FormField
-                        control={form.control}
-                        name="maxParticipants"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Max Participants</FormLabel>
-                            <FormControl>
-                              <Input 
-                                type="number" 
-                                placeholder="100" 
-                                {...field} 
-                                className="bg-gray-900/60 border-gray-700"
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-                  </div>
-                </TabsContent>
-
-                <TabsContent value="rules" className="p-4">
-                  <div className="grid grid-cols-1 gap-6">
-                    <FormField
-                      control={form.control}
-                      name="rules"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Tournament Rules</FormLabel>
-                          <FormControl>
-                            <Textarea 
-                              placeholder="Enter detailed rules for the tournament" 
-                              {...field} 
-                              className="bg-gray-900/60 border-gray-700 h-32"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name="eligibilityCriteria"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Eligibility Criteria (Optional)</FormLabel>
-                          <FormControl>
-                            <Textarea 
-                              placeholder="Specify who can participate" 
-                              {...field} 
-                              className="bg-gray-900/60 border-gray-700 h-24"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name="isFeatured"
-                      render={({ field }) => (
-                        <FormItem className="flex flex-row items-center justify-between space-y-0 rounded-lg border p-4 bg-gray-900/40 border-gray-700">
-                          <div className="space-y-0.5">
-                            <FormLabel className="text-base">Featured Tournament</FormLabel>
-                            <FormDescription className="text-sm text-gray-400">
-                              Display this tournament prominently on the homepage
+                            <FormDescription>
+                              Total prize amount to be distributed.
                             </FormDescription>
-                          </div>
-                          <FormControl>
-                            <Switch
-                              checked={field.value}
-                              onCheckedChange={field.onChange}
-                              className="data-[state=checked]:bg-primary"
-                            />
-                          </FormControl>
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                </TabsContent>
-              </Tabs>
-
-              <div className="flex justify-between mt-8">
-                <Button 
-                  type="button" 
-                  variant="outline" 
-                  onClick={onBack}
-                  disabled={selectedTab === "basic"}
-                  className="border-gray-700 hover:bg-gray-800"
-                >
-                  <ChevronLeftIcon className="mr-2 h-4 w-4" />
-                  Back
-                </Button>
-                
-                <Button 
-                  type="button" 
-                  onClick={onNext}
-                  className="bg-primary hover:bg-primary/90"
-                >
-                  {selectedTab === "rules" ? "Create Tournament" : "Next"}
-                </Button>
-              </div>
-            </form>
-          </Form>
-        </CardContent>
-        <CardFooter className="flex justify-center border-t border-gray-800 pt-4">
-          <div className="flex items-center text-yellow-400 text-sm">
-            <InfoIcon className="h-4 w-4 mr-2" />
-            <span>All changes will be audited for admin accountability</span>
-          </div>
-        </CardFooter>
-      </Card>
-    </div>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={form.control}
+                        name="entryFee"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Entry Fee (₹)</FormLabel>
+                            <FormControl>
+                              <Input type="number" min={0} {...field} />
+                            </FormControl>
+                            <FormDescription>
+                              0 for free tournaments.
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={form.control}
+                        name="brackets"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Tournament Format</FormLabel>
+                            <Select 
+                              onValueChange={field.onChange}
+                              defaultValue={field.value || "single_elimination"}
+                            >
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select format" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                <SelectItem value="single_elimination">Single Elimination</SelectItem>
+                                <SelectItem value="double_elimination">Double Elimination</SelectItem>
+                                <SelectItem value="round_robin">Round Robin</SelectItem>
+                                <SelectItem value="swiss">Swiss System</SelectItem>
+                                <SelectItem value="custom">Custom</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={form.control}
+                        name="rules"
+                        render={({ field }) => (
+                          <FormItem className="col-span-2">
+                            <FormLabel>Tournament Rules</FormLabel>
+                            <FormControl>
+                              <Textarea 
+                                placeholder="Define the rules, regulations, and scoring system" 
+                                className="min-h-32" 
+                                {...field} 
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  </TabsContent>
+                  
+                  <TabsContent value="media" className="space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <FormField
+                        control={form.control}
+                        name="imageUrl"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Tournament Banner Image URL</FormLabel>
+                            <FormControl>
+                              <Input placeholder="Enter image URL" {...field} />
+                            </FormControl>
+                            <FormDescription>
+                              Recommended size: 1200x630px
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={form.control}
+                        name="featured"
+                        render={({ field }) => (
+                          <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                            <div className="space-y-0.5">
+                              <FormLabel className="text-base">
+                                Featured Tournament
+                              </FormLabel>
+                              <FormDescription>
+                                Show this tournament prominently on the homepage.
+                              </FormDescription>
+                            </div>
+                            <FormControl>
+                              <Switch
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
+                              />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={form.control}
+                        name="discordLink"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Discord Channel Link</FormLabel>
+                            <FormControl>
+                              <Input placeholder="https://discord.gg/..." {...field} />
+                            </FormControl>
+                            <FormDescription>
+                              For tournament communication.
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={form.control}
+                        name="streamUrl"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Stream URL</FormLabel>
+                            <FormControl>
+                              <Input placeholder="https://twitch.tv/..." {...field} />
+                            </FormControl>
+                            <FormDescription>
+                              For live broadcast of matches.
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  </TabsContent>
+                </form>
+              </Form>
+            </Tabs>
+          </CardContent>
+          <CardFooter className="justify-between border-t border-gray-800 pt-5">
+            <Button 
+              variant="outline" 
+              onClick={() => form.reset()}
+              disabled={createTournamentMutation.isPending}
+            >
+              Reset Form
+            </Button>
+            <Button 
+              onClick={form.handleSubmit(onSubmit)} 
+              disabled={createTournamentMutation.isPending}
+            >
+              {createTournamentMutation.isPending ? "Creating..." : "Create Tournament"}
+            </Button>
+          </CardFooter>
+        </Card>
+      </div>
+    </AdminLayout>
   );
 }

@@ -19,7 +19,6 @@ import UserDetails from "@/pages/user-details";
 import LiveStreams from "@/pages/live-streams";
 import StreamDetails from "@/pages/stream-details";
 import AdminDashboard from "@/pages/admin/dashboard";
-import AdminCreateTournament from "@/pages/admin/tournaments/create";
 import { lazy, Suspense } from "react";
 
 // Lazy load enhanced pages
@@ -30,12 +29,14 @@ const TournamentDetailsPremium = lazy(() => import("@/pages/tournament-details-p
 const TournamentsEnhanced = lazy(() => import("@/pages/tournaments-enhanced"));
 const FindTeammate = lazy(() => import("@/pages/find-teammate"));
 const JoinTeam = lazy(() => import("@/pages/join-team"));
-const CreateTournament = lazy(() => import("@/pages/admin/create-tournament"));
+
 
 // New Admin Pages
 const UserManagement = lazy(() => import("@/pages/admin/user-management"));
 const PaymentManagement = lazy(() => import("@/pages/admin/payment-management"));
 const AuditLogs = lazy(() => import("@/pages/admin/audit-logs"));
+const CreateTournamentLazy = lazy(() => import("@/pages/admin/create-tournament"));
+const AdminCreateTournamentLazy = lazy(() => import("@/pages/admin/tournaments/create"));
 
 // Loading component
 const PageLoader = () => (
@@ -62,7 +63,7 @@ function Router() {
       <Route path="/streams" component={LiveStreams}/>
       <Route path="/stream/:id" component={StreamDetails}/>
       <Route path="/admin/dashboard" component={AdminDashboard}/>
-      <Route path="/admin/tournaments/create" component={AdminCreateTournament}/>
+      <Route path="/admin/tournaments/create" component={AdminCreateTournamentLazy}/>
       
       {/* Admin Pages */}
       <Route path="/admin/user-management">
@@ -119,7 +120,7 @@ function Router() {
       <Route path="/admin/create-tournament">
         {() => (
           <Suspense fallback={<PageLoader />}>
-            <CreateTournament />
+            <CreateTournamentLazy />
           </Suspense>
         )}
       </Route>
