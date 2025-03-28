@@ -481,4 +481,36 @@
   .animate-slideInRight {
     animation: slideInRight 0.6s ease-out forwards;
   }
+
+  /* Card hover effects */
+  .hover-scale {
+    transition: all 0.3s ease;
+  }
+
+  .hover-scale:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.3);
+  }
+
+  /* Custom gradients */
+  .bg-gradient-game {
+    background: linear-gradient(45deg, rgba(var(--primary-rgb), 0.1), rgba(var(--accent-rgb), 0.1));
+  }
+
+  /* Responsive grid adjustments */
+  @media (max-width: 640px) {
+    .container {
+      padding-left: 1rem;
+      padding-right: 1rem;
+    }
+  }
+
+  /* Enhanced card styles */
+  .card-highlight {
+    border: 1px solid rgba(var(--primary-rgb), 0.1);
+    background: linear-gradient(to bottom right, 
+      rgba(var(--card-rgb), 0.1),
+      rgba(var(--card-rgb), 0.05)
+    );
+  }
 }
