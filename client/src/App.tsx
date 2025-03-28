@@ -34,6 +34,10 @@ const TournamentsEnhanced = lazy(() => import("@/pages/tournaments-enhanced"));
 const FindTeammate = lazy(() => import("@/pages/find-teammate"));
 const JoinTeam = lazy(() => import("@/pages/join-team"));
 const TournamentBracketDemo = lazy(() => import("@/pages/tournament-bracket-demo"));
+const Calendar = lazy(() => import("@/pages/calendar"));
+const MyTournaments = lazy(() => import("@/pages/tournaments/my-tournaments"));
+const MyTeams = lazy(() => import("@/pages/teams/my-teams"));
+const Settings = lazy(() => import("@/pages/settings"));
 
 // New Admin Pages
 const UserManagement = lazy(() => import("@/pages/admin/user-management"));
@@ -158,6 +162,38 @@ function Router() {
         {() => (
           <Suspense fallback={<PageLoader />}>
             <TournamentBracketDemo />
+          </Suspense>
+        )}
+      </Route>
+
+      <Route path="/calendar">
+        {() => (
+          <Suspense fallback={<PageLoader />}>
+            <Calendar />
+          </Suspense>
+        )}
+      </Route>
+
+      <Route path="/tournaments/my-tournaments">
+        {() => (
+          <Suspense fallback={<PageLoader />}>
+            <MyTournaments />
+          </Suspense>
+        )}
+      </Route>
+
+      <Route path="/teams/my-teams">
+        {() => (
+          <Suspense fallback={<PageLoader />}>
+            <MyTeams />
+          </Suspense>
+        )}
+      </Route>
+
+      <Route path="/settings">
+        {() => (
+          <Suspense fallback={<PageLoader />}>
+            <Settings />
           </Suspense>
         )}
       </Route>
