@@ -129,15 +129,100 @@ export default function FeaturedTournament({ tournament, matches }: FeaturedTour
           </div>
         </div>
         
-        <div className="p-6">
+        <div className="p-6 bg-gradient-to-r from-black/80 to-black/30">
           <div className="mb-6 animate-fadeIn">
-            <h4 className="text-xl font-rajdhani font-bold text-white mb-4 flex items-center">
-              <i className="ri-trophy-line mr-2 text-primary"></i> TOURNAMENT BRACKET
-            </h4>
+            <div className="flex justify-between items-center mb-6">
+              <h4 className="text-xl font-rajdhani font-bold text-white flex items-center">
+                <div className="bg-primary/20 p-2 rounded-lg mr-3 text-primary">
+                  <i className="ri-trophy-line text-xl"></i>
+                </div>
+                TOURNAMENT BRACKET
+              </h4>
+              
+              <div className="flex gap-3 text-sm">
+                <div className="flex items-center text-gray-400 border-b-2 border-primary pb-1 px-2 cursor-pointer">
+                  <i className="ri-trophy-line mr-1.5"></i> Bracket
+                </div>
+                <div className="flex items-center text-gray-500 hover:text-gray-300 transition-colors pb-1 px-2 cursor-pointer">
+                  <i className="ri-team-line mr-1.5"></i> Teams
+                </div>
+                <div className="flex items-center text-gray-500 hover:text-gray-300 transition-colors pb-1 px-2 cursor-pointer">
+                  <i className="ri-information-line mr-1.5"></i> Rules
+                </div>
+              </div>
+            </div>
+            
+            {/* Tournament Stats */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+              <div className="bg-black/30 border border-white/5 rounded-lg p-4 backdrop-blur-sm hover:border-primary/30 transition-all duration-300">
+                <div className="flex items-start gap-3">
+                  <div className="bg-primary/10 p-2 rounded-lg text-primary">
+                    <i className="ri-trophy-fill text-xl"></i>
+                  </div>
+                  <div>
+                    <h5 className="text-gray-400 text-xs mb-1">Prize Pool</h5>
+                    <p className="text-white font-bold text-xl">₹{tournament.prizePool.toLocaleString()}</p>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="bg-black/30 border border-white/5 rounded-lg p-4 backdrop-blur-sm hover:border-primary/30 transition-all duration-300">
+                <div className="flex items-start gap-3">
+                  <div className="bg-primary/10 p-2 rounded-lg text-primary">
+                    <i className="ri-team-fill text-xl"></i>
+                  </div>
+                  <div>
+                    <h5 className="text-gray-400 text-xs mb-1">Teams Registered</h5>
+                    <p className="text-white font-bold text-xl">{tournament.currentPlayers}/{tournament.maxPlayers}</p>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="bg-black/30 border border-white/5 rounded-lg p-4 backdrop-blur-sm hover:border-primary/30 transition-all duration-300">
+                <div className="flex items-start gap-3">
+                  <div className="bg-primary/10 p-2 rounded-lg text-primary">
+                    <i className="ri-calendar-fill text-xl"></i>
+                  </div>
+                  <div>
+                    <h5 className="text-gray-400 text-xs mb-1">Start Date</h5>
+                    <p className="text-white font-bold text-xl">{format(new Date(tournament.startDate), 'MMM dd')}</p>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="bg-black/30 border border-white/5 rounded-lg p-4 backdrop-blur-sm hover:border-primary/30 transition-all duration-300">
+                <div className="flex items-start gap-3">
+                  <div className="bg-primary/10 p-2 rounded-lg text-primary">
+                    <i className="ri-gamepad-fill text-xl"></i>
+                  </div>
+                  <div>
+                    <h5 className="text-gray-400 text-xs mb-1">Game Mode</h5>
+                    <p className="text-white font-bold text-xl capitalize">{tournament.gameMode}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
             
             {/* Tournament Bracket Component */}
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto relative border border-white/5 rounded-xl p-4 bg-black/30 backdrop-blur-sm shadow-lg">
+              <div className="absolute top-2 right-2 bg-primary/80 text-white text-xs px-2 py-1 rounded flex items-center">
+                <i className="ri-live-fill mr-1 animate-pulse"></i> Live Updates
+              </div>
               <TournamentBracket matches={matches} />
+            </div>
+            
+            {/* Bottom actions */}
+            <div className="mt-6 flex justify-between items-center">
+              <div className="flex gap-2 items-center text-sm text-gray-400">
+                <i className="ri-information-line"></i>
+                <span>Match winners are updated live</span>
+              </div>
+              
+              <Link href={`/tournaments/enhanced/${tournament.id}`}>
+                <a className="text-primary hover:text-primary/90 text-sm font-medium flex items-center">
+                  View Enhanced Bracket <i className="ri-arrow-right-line ml-1"></i>
+                </a>
+              </Link>
             </div>
           </div>
         </div>
